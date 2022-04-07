@@ -102,4 +102,3 @@ always @(posedge clk)
     end
 
 endmodule
-

@@ -177,6 +177,19 @@ wire all_last_out;
 reg all_last_out_d;
 wire all_last_out_r;
 
+reg [`CHANNELS*`INDEX_WIDTH-1:0] new_xk;
+/* Create a local index counter instead of chained from FFT */
+genvar x;
+generate
+    for (x=0; x < `CHANNELS; x = x + 1) begin
+        always @(posedge process_clks[x])
+            if (s_axis_data_tlast[x])
+                new_xk[x*`INDEX_WIDTH +: `INDEX_WIDTH] <= 0;
+            else if ( s_axis_data_tvalid[x] )
+                new_xk[x*`INDEX_WIDTH +: `INDEX_WIDTH] <= new_xk[x*`INDEX_WIDTH +: `INDEX_WIDTH] + 1;
+        end
+    endgenerate
+
 // Now replicate for each channel
 
 genvar i;
@@ -185,8 +198,8 @@ generate
         wire [32-1:0] intermediate_data1;
         wire [`VALUE_WIDTH-1:0] intermediate_data2;
 
-        assign intermediate_data1 = s_axis_data_tdata[i*32 +: 32] >> `PEAK_SHIFT;
-        assign intermediate_data2 = intermediate_data1[`VALUE_WIDTH-1:0];
+        /* assign intermediate_data1 = s_axis_data_tdata[i*32 +: 32] >> `PEAK_SHIFT; */
+        /* assign intermediate_data2 = intermediate_data1[`VALUE_WIDTH-1:0]; */
 
         peak_detect_fast_shell peak_detect_fast_shell_inst
         (
@@ -196,8 +209,10 @@ generate
                 .valid    ( s_axis_data_tvalid[i]                           ) ,
                 .last     ( s_axis_data_tlast[i]                            ) ,
                 .last_out ( last_out[i]                                     ) ,
-                .input_i  (intermediate_data2) ,
-                .index_i  ( xk[i*`INDEX_WIDTH +: `INDEX_WIDTH]                ) ,
+                .input_i  (s_axis_data_tdata[i*32 +: `VALUE_WIDTH]          ) ,
+                /* .input_i  (intermediate_data2) , */
+                .index_i  ( new_xk[i*`INDEX_WIDTH +: `INDEX_WIDTH]                ) ,
+                /* .index_i  ( xk[i*`INDEX_WIDTH +: `INDEX_WIDTH]                ) , */
                 // outputs
                 .peaks     (peaks[i*`VALUE_WIDTH*`NUM_PEAKS +: `VALUE_WIDTH*`NUM_PEAKS] ),
                 .indices   (indices[i*`INDEX_WIDTH*`NUM_PEAKS +: `INDEX_WIDTH*`NUM_PEAKS] )

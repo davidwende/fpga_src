@@ -23,7 +23,13 @@ module mc_top
     output fft_rst,
     output fifo_rst,
 
+    output reg select_average,
+
     output reg force_nowindow,
+
+    output dbg_state_idle,
+    output dbg_running,
+    output dbg_run_type0,
 
     output disable_fifowr,
     output [7:0] disable_fiford,
@@ -31,7 +37,7 @@ module mc_top
     output disable_window,
     output disable_fft,
     output disable_power,
-    /* output disable_peak, */
+    output disable_peak,
 
     input pixel_done, // from input_top, signals that it finished sampling a pixel
     input galvo_spi_done, // in clk_adc domain
@@ -94,6 +100,9 @@ wire galvo_spi_done_s;
 wire force_nowindow_clr;
 wire force_nowindow_set;
 
+wire select_average_clr;
+wire select_average_set;
+
 /* debug mux */
 wire [3:0] dbg_mux_set;
 wire [3:0] dbg_mux_i;
@@ -105,6 +114,7 @@ wire [3:0] run_type;
 wire [3:0] run_type_s;
 reg running;
 assign run_type     = control[31:28];
+assign dbg_run_type0 = control[31];
 
 // resets
 assign rst_peak_ready = control[8];
@@ -128,13 +138,15 @@ assign force_nowindow_set = control[16];
 
 /* Various resets */
 
-assign fifo_rst      = control[6];
-assign fft_rst       = control[5];
-assign debug_go_i    = control[4];
-assign adc_rst       = control[3];
-assign pm_rst        = control[2];
-assign bitslip_rst   = control[1];
-assign fft_event_rst = control[0];
+assign select_average_clr = control[8];
+assign select_average_set = control[7];
+assign fifo_rst           = control[6];
+assign fft_rst            = control[5];
+assign debug_go_i         = control[4];
+assign adc_rst            = control[3];
+assign pm_rst             = control[2];
+assign bitslip_rst        = control[1];
+assign fft_event_rst      = control[0];
 
 always @ (posedge clk_control)
     fft_event_rst_d <= fft_event_rst;
@@ -153,6 +165,14 @@ always @ (posedge clk_control or negedge rst_control_n)
         force_nowindow <= 1;
     else if (force_nowindow_clr)
         force_nowindow <= 0;
+
+always @ (posedge clk_control or negedge rst_control_n)
+    if (~rst_control_n)
+        select_average <= 0;
+    else if (select_average_set)
+        select_average <= 1;
+    else if (select_average_set)
+        select_average <= 0;
 
 /* ======================================== */
 
@@ -236,6 +256,8 @@ always @ (state,  pixel_done_s, galvo_spi_done_s, running) begin
 
     endcase
 end
+
+assign dbg_state_idle = (state == IDLE) ? 1'b1 : 1'b0;
 
 always @ (posedge clk_stream)
     if (state == DO_PIXEL)
@@ -463,6 +485,8 @@ assign rstn_adc = ~adc_rst_reg;
            running <= 1'b0;
        else if (run_type_s[3])
            running <= 1'b1;
+
+assign dbg_running = running;
 
        endmodule
 

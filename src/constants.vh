@@ -18,6 +18,8 @@
 
 // remove lower 3 nibbles
 `define PEAK_SHIFT 8
+// and also when using average
+`define AVERAGE_PEAK_SHIFT 10
 
 // take 16 bits, i.e. ignore highest nibble
 `define VALUE_WIDTH 16

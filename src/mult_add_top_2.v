@@ -9,6 +9,7 @@
 `timescale 1ns/1ps
 module mult_add_top_2  (
             input disable_power,
+            input select_average,
 
             input wire s_axis_data0_aclk,
             input wire [32 - 1 : 0] s_axis_data0_tdata,
@@ -61,12 +62,7 @@ module mult_add_top_2  (
             input  [`CHANNELS*`INDEX_WIDTH-1:0] xk_in,
             output [`CHANNELS*`INDEX_WIDTH-1:0] xk_out,
 
-            // output to downstream process
-            /* input wire m_axis_data_aclk, */
-            /* output wire [CHANNELS*32 - 1 : 0] m_axis_data_tdata, */
-            /* output wire m_axis_data_tvalid, */
-            /* input wire m_axis_data_tready, */
-            /* output wire m_axis_data_tlast */
+            /* Master AXIS to Peak Detection */
 
             input wire m_axis_data0_aclk,
             output wire [32 - 1 : 0] m_axis_data0_tdata,
@@ -98,6 +94,7 @@ module mult_add_top_2  (
             input wire m_axis_data4_tready,
             output wire m_axis_data4_tlast,
 
+
             input wire m_axis_data5_aclk,
             output wire [32 - 1 : 0] m_axis_data5_tdata,
             output wire m_axis_data5_tvalid,
@@ -116,23 +113,35 @@ module mult_add_top_2  (
             input wire m_axis_data7_tready,
             output wire m_axis_data7_tlast
         );
-localparam integer DELAY = 3;
+localparam integer DELAY = 5;
+
+wire [`CHANNELS-1:0] adder_tvalid;
+wire [`CHANNELS-1:0] average_tvalid;
+wire [`CHANNELS-1:0] adder_tlast;
+wire [`CHANNELS-1:0] average_tlast;
 
 wire [`CHANNELS-1:0] m_axis_data_tvalid;
 wire [`CHANNELS-1:0] m_axis_data_tlast;
-wire [`CHANNELS*32-1:0] m_axis_data_tdata;
+
+/* wire [`CHANNELS*32-1:0] m_axis_data_tdata; */
 wire [`CHANNELS-1:0] s_axis_data_tvalid;
 wire [`CHANNELS-1:0] s_axis_data_tlast;
 
+wire [`CHANNELS*32-1:0] average_out;
+wire [`CHANNELS*32-1:0] adder_out;
+wire [`CHANNELS*32-1:0] final_out;
+
+wire [`CHANNELS-1:0] select_average_s;
+
 // split output data into separate channels
-assign m_axis_data0_tdata = m_axis_data_tdata[0 * 32 +: 32];
-assign m_axis_data1_tdata = m_axis_data_tdata[1 * 32 +: 32];
-assign m_axis_data2_tdata = m_axis_data_tdata[2 * 32 +: 32];
-assign m_axis_data3_tdata = m_axis_data_tdata[3 * 32 +: 32];
-assign m_axis_data4_tdata = m_axis_data_tdata[4 * 32 +: 32];
-assign m_axis_data5_tdata = m_axis_data_tdata[5 * 32 +: 32];
-assign m_axis_data6_tdata = m_axis_data_tdata[6 * 32 +: 32];
-assign m_axis_data7_tdata = m_axis_data_tdata[7 * 32 +: 32];
+assign m_axis_data0_tdata = final_out[0 * 32 +: 32];
+assign m_axis_data1_tdata = final_out[1 * 32 +: 32];
+assign m_axis_data2_tdata = final_out[2 * 32 +: 32];
+assign m_axis_data3_tdata = final_out[3 * 32 +: 32];
+assign m_axis_data4_tdata = final_out[4 * 32 +: 32];
+assign m_axis_data5_tdata = final_out[5 * 32 +: 32];
+assign m_axis_data6_tdata = final_out[6 * 32 +: 32];
+assign m_axis_data7_tdata = final_out[7 * 32 +: 32];
 
 assign m_axis_data0_tvalid = m_axis_data_tvalid[0];
 assign m_axis_data1_tvalid = m_axis_data_tvalid[1];
@@ -228,13 +237,15 @@ assign s_axis_data_tdata = {
              .rstn (1'b1),
              .clk  (process_clks[d]),
              .in   (s_axis_data_tvalid[d]),
-             .out (m_axis_data_tvalid[d])
+             .out (adder_tvalid[d])
+             /* .out (m_axis_data_tvalid[d]) */
          );
          mydelay #( .DELAY (DELAY-1)) delay_last (
              .rstn (1'b1),
              .clk  (process_clks[d]),
              .in   (s_axis_data_tlast[d]),
-             .out (m_axis_data_tlast[d])
+             .out (adder_tlast[d])
+             /* .out (m_axis_data_tlast[d]) */
          );
      end
 endgenerate
@@ -314,7 +325,7 @@ generate
             .B(imag_squared[i*32 +: 31]),  // input wire [30 : 0] B
             .CLK(process_clks[i]),  // input wire CLK
             .CE(disable_power_s[i]),    // input wire CE
-            .S(m_axis_data_tdata[i*32 +: 32]) // output wire [31 : 0] S
+            .S(adder_out[i*32 +: 32]) // output wire [31 : 0] S
         );
 end
 endgenerate
@@ -329,5 +340,52 @@ sync_many #
     .outs (disable_power_s)
 );
 
+sync_many #
+(
+    .WIDTH(8)
+) sync_select_average
+(
+    .clks (process_clks),
+    .ins   ({8{select_average}}),
+    .outs (select_average_s)
+);
+/* Now make a moving average output */
+genvar k;
+generate
+    for (k=0; k < `CHANNELS; k = k + 1) begin
+        moving_average moving_average_inst (
+            .clk (process_clks[k]),
+
+            .valid_i (adder_tvalid[k]),
+            .valid_o (average_tvalid[k]),
+
+            .last_i (adder_tlast[k]),
+            .last_o (average_tlast[k]),
+
+            .in  (adder_out[k*32 +: 32]),
+            .out (average_out[k*32 +: 32])
+            );
+        end
+    endgenerate
+
+/* Select between the regular mult / add or the moving average output */
+genvar m;
+generate
+    for (m=0; m < `CHANNELS; m = m + 1) begin
+        wire [31:0] average1, adder1;
+        wire [`VALUE_WIDTH-1:0] average2, adder2;
+
+        assign average1 = average_out[m*32 +: 32] >> `AVERAGE_PEAK_SHIFT;
+        assign average2 = average1[`VALUE_WIDTH-1:0];
+
+        assign adder1 = adder_out[m*32 +: 32] >> `PEAK_SHIFT;
+        assign adder2 = adder1[`VALUE_WIDTH-1:0];
+
+        assign final_out[m*32 +: 32] = select_average_s[m] ? average2 : adder2;
+
+        assign m_axis_data_tvalid[m] = select_average_s[m] ? average_tvalid[m] : adder_tvalid[m];
+        assign m_axis_data_tlast[m]  = select_average_s[m] ? average_tlast[m]  : adder_tlast[m];
+        end
+ endgenerate
 endmodule
 
