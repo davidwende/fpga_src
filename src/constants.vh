@@ -14,7 +14,7 @@
 `define MULTI_OUT_WIDTH 25
 
 // peaks
-`define NUM_PEAKS 8
+`define NUM_PEAKS 4
 
 // remove lower 3 nibbles
 `define PEAK_SHIFT 8

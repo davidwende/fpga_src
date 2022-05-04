@@ -11,7 +11,7 @@
 //`include "c:\Users\David\Documents\boards\main\fpga\all_src\constants.vh"
 module fft_top_2  (
     input reset, // synced to fft clk
-    input disable_fft,
+    /* input disable_fft, */
             //
             // AXI S slave - incoming data from window
             input  s_axis_data0_aclk,
@@ -270,7 +270,8 @@ generate
         .s_axis_config_tready        ( ) ,  // output wire s_axis_config_tready
 
         .s_axis_data_tdata           ( s_axis_data_tdata[i*32 +: 32]  ) ,  // input wire [31 : 0] s_axis_data_tdata
-        .s_axis_data_tvalid          ( s_axis_data_tvalid[i] && ~disable_fft_s[i] ) ,  // input wire s_axis_data_tvalid
+        .s_axis_data_tvalid          ( s_axis_data_tvalid[i]) ,  // input wire s_axis_data_tvalid
+        /* .s_axis_data_tvalid          ( s_axis_data_tvalid[i] && ~disable_fft_s[i] ) ,  // input wire s_axis_data_tvalid */
         .s_axis_data_tready          ( s_axis_data_tready       [i] ) ,  // output wire s_axis_data_tready
         .s_axis_data_tlast           ( s_axis_data_tlast[i]      ) ,  // input wire s_axis_data_tlast
 
@@ -399,15 +400,15 @@ assign m_axis_data7_tvalid = tvalid[7];
    /*                         // losslessly across the two clock domains, use the XPM_CDC_GRAY macro instead. */
 
    /* ); */
-sync_many #
-	(
-		.WIDTH(8)
-	) sync_disable
-	(
-        .clks (process_clks),
-        .ins   ({8{disable_fft}}),
-        .outs (disable_fft_s)
-	);
+/* sync_many # */
+/* 	( */
+/* 		.WIDTH(8) */
+/* 	) sync_disable */
+/* 	( */
+/*         .clks (process_clks), */
+/*         .ins   ({8{disable_fft}}), */
+/*         .outs (disable_fft_s) */
+/* 	); */
 sync_many #
 	(
 		.WIDTH(8)

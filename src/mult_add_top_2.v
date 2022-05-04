@@ -8,7 +8,7 @@
 
 `timescale 1ns/1ps
 module mult_add_top_2  (
-            input disable_power,
+            /* input disable_power, */
             input select_average,
 
             input wire s_axis_data0_aclk,
@@ -199,14 +199,14 @@ wire [`CHANNELS-1:0] disable_power_s;
 reg [`CHANNELS*32 - 1 : 0] s_axis_data_tdata_d;
 
 /* reg [(CHANNELS*DELAY*`INDEX_WIDTH)-1:0] sr_xk; */
-reg [(DELAY*`INDEX_WIDTH)-1:0] sr_xk0;
-reg [(DELAY*`INDEX_WIDTH)-1:0] sr_xk1;
-reg [(DELAY*`INDEX_WIDTH)-1:0] sr_xk2;
-reg [(DELAY*`INDEX_WIDTH)-1:0] sr_xk3;
-reg [(DELAY*`INDEX_WIDTH)-1:0] sr_xk4;
-reg [(DELAY*`INDEX_WIDTH)-1:0] sr_xk5;
-reg [(DELAY*`INDEX_WIDTH)-1:0] sr_xk6;
-reg [(DELAY*`INDEX_WIDTH)-1:0] sr_xk7;
+reg [((DELAY+1)*`INDEX_WIDTH)-1:0] sr_xk0;
+reg [((DELAY+1)*`INDEX_WIDTH)-1:0] sr_xk1;
+reg [((DELAY+1)*`INDEX_WIDTH)-1:0] sr_xk2;
+reg [((DELAY+1)*`INDEX_WIDTH)-1:0] sr_xk3;
+reg [((DELAY+1)*`INDEX_WIDTH)-1:0] sr_xk4;
+reg [((DELAY+1)*`INDEX_WIDTH)-1:0] sr_xk5;
+reg [((DELAY+1)*`INDEX_WIDTH)-1:0] sr_xk6;
+reg [((DELAY+1)*`INDEX_WIDTH)-1:0] sr_xk7;
 
 assign s_axis_data0_tready = 1'b1;
 assign s_axis_data1_tready = 1'b1;
@@ -252,7 +252,7 @@ endgenerate
 
 genvar j;
 generate
-    for (j=DELAY-1; j > 0; j = j - 1) begin
+    for (j=DELAY; j > 0; j = j - 1) begin
         always @(posedge process_clks[0])
             sr_xk0[(j*`INDEX_WIDTH) +: `INDEX_WIDTH] <= sr_xk0[(j-1)*`INDEX_WIDTH +: `INDEX_WIDTH];
         always @(posedge process_clks[1])
@@ -290,14 +290,14 @@ always @(posedge process_clks[7])
     sr_xk7[`INDEX_WIDTH-1 : 0] <= xk_in[7*`INDEX_WIDTH +: `INDEX_WIDTH];
 
 
-assign xk_out[0*`INDEX_WIDTH +: `INDEX_WIDTH] = sr_xk0[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH];
-assign xk_out[1*`INDEX_WIDTH +: `INDEX_WIDTH] = sr_xk1[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH];
-assign xk_out[2*`INDEX_WIDTH +: `INDEX_WIDTH] = sr_xk2[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH];
-assign xk_out[3*`INDEX_WIDTH +: `INDEX_WIDTH] = sr_xk3[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH];
-assign xk_out[4*`INDEX_WIDTH +: `INDEX_WIDTH] = sr_xk4[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH];
-assign xk_out[5*`INDEX_WIDTH +: `INDEX_WIDTH] = sr_xk5[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH];
-assign xk_out[6*`INDEX_WIDTH +: `INDEX_WIDTH] = sr_xk6[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH];
-assign xk_out[7*`INDEX_WIDTH +: `INDEX_WIDTH] = sr_xk7[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH];
+assign xk_out[0*`INDEX_WIDTH +: `INDEX_WIDTH] = (~select_average_s[0]) ? sr_xk0[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH] : sr_xk0[(DELAY)*`INDEX_WIDTH +: `INDEX_WIDTH] ;
+assign xk_out[1*`INDEX_WIDTH +: `INDEX_WIDTH] = (~select_average_s[1]) ? sr_xk1[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH] : sr_xk1[(DELAY)*`INDEX_WIDTH +: `INDEX_WIDTH] ;
+assign xk_out[2*`INDEX_WIDTH +: `INDEX_WIDTH] = (~select_average_s[2]) ? sr_xk2[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH] : sr_xk2[(DELAY)*`INDEX_WIDTH +: `INDEX_WIDTH] ;
+assign xk_out[3*`INDEX_WIDTH +: `INDEX_WIDTH] = (~select_average_s[3]) ? sr_xk3[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH] : sr_xk3[(DELAY)*`INDEX_WIDTH +: `INDEX_WIDTH] ;
+assign xk_out[4*`INDEX_WIDTH +: `INDEX_WIDTH] = (~select_average_s[4]) ? sr_xk4[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH] : sr_xk4[(DELAY)*`INDEX_WIDTH +: `INDEX_WIDTH] ;
+assign xk_out[5*`INDEX_WIDTH +: `INDEX_WIDTH] = (~select_average_s[5]) ? sr_xk5[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH] : sr_xk5[(DELAY)*`INDEX_WIDTH +: `INDEX_WIDTH] ;
+assign xk_out[6*`INDEX_WIDTH +: `INDEX_WIDTH] = (~select_average_s[6]) ? sr_xk6[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH] : sr_xk6[(DELAY)*`INDEX_WIDTH +: `INDEX_WIDTH] ;
+assign xk_out[7*`INDEX_WIDTH +: `INDEX_WIDTH] = (~select_average_s[7]) ? sr_xk7[(DELAY-1)*`INDEX_WIDTH +: `INDEX_WIDTH] : sr_xk7[(DELAY)*`INDEX_WIDTH +: `INDEX_WIDTH] ;
 
 // Now do the process for each channel
 wire [32*`CHANNELS-1: 0] imag_squared;
@@ -324,21 +324,22 @@ generate
             .A(real_squared[i*32 +: 31]),  // input wire [30 : 0] A
             .B(imag_squared[i*32 +: 31]),  // input wire [30 : 0] B
             .CLK(process_clks[i]),  // input wire CLK
-            .CE(disable_power_s[i]),    // input wire CE
+            .CE(1'b1),    // input wire CE
+            /* .CE(disable_power_s[i]),    // input wire CE */
             .S(adder_out[i*32 +: 32]) // output wire [31 : 0] S
         );
 end
 endgenerate
 
-sync_many #
-(
-    .WIDTH(8)
-) sync_disable_power
-(
-    .clks (process_clks),
-    .ins   ({8{~disable_power}}),
-    .outs (disable_power_s)
-);
+/* sync_many # */
+/* ( */
+/*     .WIDTH(8) */
+/* ) sync_disable_power */
+/* ( */
+/*     .clks (process_clks), */
+/*     .ins   ({8{~disable_power}}), */
+/*     .outs (disable_power_s) */
+/* ); */
 
 sync_many #
 (

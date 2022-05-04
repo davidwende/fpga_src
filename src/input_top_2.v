@@ -42,7 +42,7 @@ output dbg_in_pixel,
      input rst_stream_n,
      input rst_control_n,
      input rst_adc_n,
-     input disable_fifowr,
+     /* input disable_fifowr, */
      input [`CHANNELS-1:0] disable_fiford,
 
      output reg [9:0] debug_data,
@@ -57,7 +57,7 @@ output dbg_in_pixel,
     input lreset_n,
 
     input debug_go,
-    input [1:0] dbg_mux,
+    input [2:0] dbg_mux,
 
         // AXI to debug adc capture memory
     input         s_axi_adc0_aclk    ,        // input wire s_axi_aclk
@@ -81,50 +81,6 @@ output dbg_in_pixel,
     output [1:0]  s_axi_adc0_rresp   ,      // output wire [1 : 0] s_axi_rresp
     output        s_axi_adc0_rvalid  ,    // output wire s_axi_rvalid
     input         s_axi_adc0_rready  ,      // input wire s_axi_rready
-
-    input         s_axi_adc1_aclk    ,        // input wire s_axi_aclk
-    input         s_axi_adc1_aresetn ,  // input wire s_axi_aresetn
-    input [12:0]  s_axi_adc1_awaddr  ,    // input wire [13 : 0] s_axi_awaddr
-    input [2:0]   s_axi_adc1_awprot  ,    // input wire [2 : 0] s_axi_awprot
-    input         s_axi_adc1_awvalid ,  // input wire s_axi_awvalid
-    output        s_axi_adc1_awready ,  // output wire s_axi_awready
-    input [31:0]  s_axi_adc1_wdata   ,      // input wire [31 : 0] s_axi_wdata
-    input [3:0]   s_axi_adc1_wstrb   ,      // input wire [3 : 0] s_axi_wstrb
-    input         s_axi_adc1_wvalid  ,    // input wire s_axi_wvalid
-    output        s_axi_adc1_wready  ,    // output wire s_axi_wready
-    output [1:0]  s_axi_adc1_bresp   ,      // output wire [1 : 0] s_axi_bresp
-    output        s_axi_adc1_bvalid  ,    // output wire s_axi_bvalid
-    input         s_axi_adc1_bready  ,    // input wire s_axi_bready
-    input [12:0]  s_axi_adc1_araddr  ,    // input wire [13 : 0] s_axi_araddr
-    input [2:0]   s_axi_adc1_arprot  ,    // input wire [2 : 0] s_axi_arprot
-    input         s_axi_adc1_arvalid ,  // input wire s_axi_arvalid
-    output        s_axi_adc1_arready ,  // output wire s_axi_arready
-    output [31:0] s_axi_adc1_rdata   ,      // output wire [31 : 0] s_axi_rdata
-    output [1:0]  s_axi_adc1_rresp   ,      // output wire [1 : 0] s_axi_rresp
-    output        s_axi_adc1_rvalid  ,    // output wire s_axi_rvalid
-    input         s_axi_adc1_rready  ,      // input wire s_axi_rready
-
-    input         s_axi_adc2_aclk    ,        // input wire s_axi_aclk
-    input         s_axi_adc2_aresetn ,  // input wire s_axi_aresetn
-    input [12:0]  s_axi_adc2_awaddr  ,    // input wire [13 : 0] s_axi_awaddr
-    input [2:0]   s_axi_adc2_awprot  ,    // input wire [2 : 0] s_axi_awprot
-    input         s_axi_adc2_awvalid ,  // input wire s_axi_awvalid
-    output        s_axi_adc2_awready ,  // output wire s_axi_awready
-    input [31:0]  s_axi_adc2_wdata   ,      // input wire [31 : 0] s_axi_wdata
-    input [3:0]   s_axi_adc2_wstrb   ,      // input wire [3 : 0] s_axi_wstrb
-    input         s_axi_adc2_wvalid  ,    // input wire s_axi_wvalid
-    output        s_axi_adc2_wready  ,    // output wire s_axi_wready
-    output [1:0]  s_axi_adc2_bresp   ,      // output wire [1 : 0] s_axi_bresp
-    output        s_axi_adc2_bvalid  ,    // output wire s_axi_bvalid
-    input         s_axi_adc2_bready  ,    // input wire s_axi_bready
-    input [12:0]  s_axi_adc2_araddr  ,    // input wire [13 : 0] s_axi_araddr
-    input [2:0]   s_axi_adc2_arprot  ,    // input wire [2 : 0] s_axi_arprot
-    input         s_axi_adc2_arvalid ,  // input wire s_axi_arvalid
-    output        s_axi_adc2_arready ,  // output wire s_axi_arready
-    output [31:0] s_axi_adc2_rdata   ,      // output wire [31 : 0] s_axi_rdata
-    output [1:0]  s_axi_adc2_rresp   ,      // output wire [1 : 0] s_axi_rresp
-    output        s_axi_adc2_rvalid  ,    // output wire s_axi_rvalid
-    input         s_axi_adc2_rready  ,      // input wire s_axi_rready
 
     // masters to downstream process
     input wire m_axis_data0_aclk,
@@ -202,8 +158,8 @@ reg in_capture;
 wire debug_go_s;
 
 /* pipeline registers for debug capture */
-wire [1:0] dbg_mux_l;
-reg [9:0] reg0, reg1, reg2;
+wire [2:0] dbg_mux_l;
+reg [9:0] capture;
 
 wire        bram0_clk_a;
 wire        bram0_en_a;
@@ -211,20 +167,6 @@ wire [3:0]  bram0_we_a;
 wire [31:0] bram0_wrdata_a;
 wire [11:0] bram0_rddata_a;
 wire [12:0] bram0_addr_a;
-
-wire        bram1_clk_a;
-wire        bram1_en_a;
-wire [3:0]  bram1_we_a;
-wire [31:0] bram1_wrdata_a;
-wire [11:0] bram1_rddata_a;
-wire [12:0] bram1_addr_a;
-
-wire        bram2_clk_a;
-wire        bram2_en_a;
-wire [3:0]  bram2_we_a;
-wire [31:0] bram2_wrdata_a;
-wire [11:0] bram2_rddata_a;
-wire [12:0] bram2_addr_a;
 
 wire lreset_n_adc;
 
@@ -481,75 +423,13 @@ bram_ctrl_2k bram_ctrl_capture0 (
   .bram_wrdata_a ( bram0_wrdata_a ) ,  // output wire [31 : 0] bram_wrdata_a
   .bram_rddata_a ( {20'h0, bram0_rddata_a })  // input wire [31 : 0] bram_rddata_a
 );
-bram_ctrl_2k bram_ctrl_capture1 (
-  .s_axi_aclk    ( s_axi_adc1_aclk    ) ,        // input wire s_axi_aclk
-  .s_axi_aresetn ( s_axi_adc1_aresetn ) ,  // input wire s_axi_aresetn
-  .s_axi_awaddr  ( s_axi_adc1_awaddr  ) ,    // input wire [13 : 0] s_axi_awaddr
-  .s_axi_awprot  ( s_axi_adc1_awprot  ) ,    // input wire [2 : 0] s_axi_awprot
-  .s_axi_awvalid ( s_axi_adc1_awvalid ) ,  // input wire s_axi_awvalid
-  .s_axi_awready ( s_axi_adc1_awready ) ,  // output wire s_axi_awready
-  .s_axi_wdata   ( s_axi_adc1_wdata   ) ,      // input wire [31 : 0] s_axi_wdata
-  .s_axi_wstrb   ( s_axi_adc1_wstrb   ) ,      // input wire [3 : 0] s_axi_wstrb
-  .s_axi_wvalid  ( s_axi_adc1_wvalid  ) ,    // input wire s_axi_wvalid
-  .s_axi_wready  ( s_axi_adc1_wready  ) ,    // output wire s_axi_wready
-  .s_axi_bresp   ( s_axi_adc1_bresp   ) ,      // output wire [1 : 0] s_axi_bresp
-  .s_axi_bvalid  ( s_axi_adc1_bvalid  ) ,    // output wire s_axi_bvalid
-  .s_axi_bready  ( s_axi_adc1_bready  ) ,    // input wire s_axi_bready
-  .s_axi_araddr  ( s_axi_adc1_araddr  ) ,    // input wire [13 : 0] s_axi_araddr
-  .s_axi_arprot  ( s_axi_adc1_arprot  ) ,    // input wire [2 : 0] s_axi_arprot
-  .s_axi_arvalid ( s_axi_adc1_arvalid ) ,  // input wire s_axi_arvalid
-  .s_axi_arready ( s_axi_adc1_arready ) ,  // output wire s_axi_arready
-  .s_axi_rdata   ( s_axi_adc1_rdata   ) ,      // output wire [31 : 0] s_axi_rdata
-  .s_axi_rresp   ( s_axi_adc1_rresp   ) ,      // output wire [1 : 0] s_axi_rresp
-  .s_axi_rvalid  ( s_axi_adc1_rvalid  ) ,    // output wire s_axi_rvalid
-  .s_axi_rready  ( s_axi_adc1_rready  ) ,    // input wire s_axi_rready
-
-  .bram_rst_a    ( ) ,        // output wire bram_rst_a
-  .bram_clk_a    ( bram1_clk_a    ) ,        // output wire bram_clk_a
-  .bram_en_a     ( bram1_en_a     ) ,          // output wire bram_en_a
-  .bram_we_a     ( bram1_we_a     ) ,          // output wire [3 : 0] bram_we_a
-  .bram_addr_a   ( bram1_addr_a   ) ,      // output wire [13 : 0] bram_addr_a
-  .bram_wrdata_a ( bram1_wrdata_a ) ,  // output wire [31 : 0] bram_wrdata_a
-  .bram_rddata_a ( {20'h0, bram1_rddata_a })  // input wire [31 : 0] bram_rddata_a
-);
-bram_ctrl_2k bram_ctrl_capture2 (
-  .s_axi_aclk    ( s_axi_adc2_aclk    ) ,        // input wire s_axi_aclk
-  .s_axi_aresetn ( s_axi_adc2_aresetn ) ,  // input wire s_axi_aresetn
-  .s_axi_awaddr  ( s_axi_adc2_awaddr  ) ,    // input wire [13 : 0] s_axi_awaddr
-  .s_axi_awprot  ( s_axi_adc2_awprot  ) ,    // input wire [2 : 0] s_axi_awprot
-  .s_axi_awvalid ( s_axi_adc2_awvalid ) ,  // input wire s_axi_awvalid
-  .s_axi_awready ( s_axi_adc2_awready ) ,  // output wire s_axi_awready
-  .s_axi_wdata   ( s_axi_adc2_wdata   ) ,      // input wire [31 : 0] s_axi_wdata
-  .s_axi_wstrb   ( s_axi_adc2_wstrb   ) ,      // input wire [3 : 0] s_axi_wstrb
-  .s_axi_wvalid  ( s_axi_adc2_wvalid  ) ,    // input wire s_axi_wvalid
-  .s_axi_wready  ( s_axi_adc2_wready  ) ,    // output wire s_axi_wready
-  .s_axi_bresp   ( s_axi_adc2_bresp   ) ,      // output wire [1 : 0] s_axi_bresp
-  .s_axi_bvalid  ( s_axi_adc2_bvalid  ) ,    // output wire s_axi_bvalid
-  .s_axi_bready  ( s_axi_adc2_bready  ) ,    // input wire s_axi_bready
-  .s_axi_araddr  ( s_axi_adc2_araddr  ) ,    // input wire [13 : 0] s_axi_araddr
-  .s_axi_arprot  ( s_axi_adc2_arprot  ) ,    // input wire [2 : 0] s_axi_arprot
-  .s_axi_arvalid ( s_axi_adc2_arvalid ) ,  // input wire s_axi_arvalid
-  .s_axi_arready ( s_axi_adc2_arready ) ,  // output wire s_axi_arready
-  .s_axi_rdata   ( s_axi_adc2_rdata   ) ,      // output wire [31 : 0] s_axi_rdata
-  .s_axi_rresp   ( s_axi_adc2_rresp   ) ,      // output wire [1 : 0] s_axi_rresp
-  .s_axi_rvalid  ( s_axi_adc2_rvalid  ) ,    // output wire s_axi_rvalid
-  .s_axi_rready  ( s_axi_adc2_rready  ) ,    // input wire s_axi_rready
-
-  .bram_rst_a    ( ) ,        // output wire bram_rst_a
-  .bram_clk_a    ( bram2_clk_a    ) ,        // output wire bram_clk_a
-  .bram_en_a     ( bram2_en_a     ) ,          // output wire bram_en_a
-  .bram_we_a     ( bram2_we_a     ) ,          // output wire [3 : 0] bram_we_a
-  .bram_addr_a   ( bram2_addr_a   ) ,      // output wire [13 : 0] bram_addr_a
-  .bram_wrdata_a ( bram2_wrdata_a ) ,  // output wire [31 : 0] bram_wrdata_a
-  .bram_rddata_a ( {20'h0, bram2_rddata_a })  // input wire [31 : 0] bram_rddata_a
-);
 
 dpram_2kx12 debug_dpram_ch0 (
   .clka                 ( clk_adc ) ,    // input wire clka
   .ena                  ( 1'b1     ) ,      // input wire ena
   .wea                  ( in_capture     ) ,      // input wire [0 : 0] wea
   .addra                ( debug_addr   ) ,  // input wire [9 : 0] addra
-  .dina                 ( {2'b0,reg0}  ) ,    // input wire [9 : 0] dina
+  .dina                 ( {2'b0,capture}  ) ,    // input wire [9 : 0] dina
   /* .dina                 ( {2'b0,re_order[19:10]}  ) ,    // input wire [9 : 0] dina */
   .douta                (             ) ,  // output wire [9 : 0] douta
 
@@ -561,36 +441,6 @@ dpram_2kx12 debug_dpram_ch0 (
   .doutb ( bram0_rddata_a      ) // output wire [15 : 0] doutb
                               ) ;
 
-dpram_2kx12 debug_dpram_ch1 (
-  .clka                 ( clk_adc ) ,    // input wire clka
-  .ena                  ( 1'b1     ) ,      // input wire ena
-  .wea                  ( in_capture     ) ,      // input wire [0 : 0] wea
-  .addra                ( debug_addr   ) ,  // input wire [9 : 0] addra
-  .dina                 ( {2'b0,reg1}  ) ,    // input wire [9 : 0] dina
-  .douta                (             ) ,  // output wire [9 : 0] douta
-
-  .clkb  ( bram1_clk_a         ) ,    // input wire clkb
-  .enb   ( bram1_en_a          ) ,      // input wire enb
-  .web   ( bram1_we_a[0]       ) ,      // input wire [0 : 0] web
-  .addrb ( bram1_addr_a[12:2]  ) ,  // input wire [9 : 0] addrb
-  .dinb  ( bram1_wrdata_a[11:0] ) ,    // input wire [9 : 0] dinb
-  .doutb ( bram1_rddata_a      ) // output wire [15 : 0] doutb
-                              ) ;
-dpram_2kx12 debug_dpram_ch2 (
-  .clka                 ( clk_adc ) ,    // input wire clka
-  .ena                  ( 1'b1     ) ,      // input wire ena
-  .wea                  ( in_capture     ) ,      // input wire [0 : 0] wea
-  .addra                ( debug_addr   ) ,  // input wire [9 : 0] addra
-  .dina                 ( {2'b0,reg2}  ) ,    // input wire [9 : 0] dina
-  .douta                (             ) ,  // output wire [9 : 0] douta
-
-  .clkb  ( bram2_clk_a         ) ,    // input wire clkb
-  .enb   ( bram2_en_a          ) ,      // input wire enb
-  .web   ( bram2_we_a[0]       ) ,      // input wire [0 : 0] web
-  .addrb ( bram2_addr_a[12:2]  ) ,  // input wire [9 : 0] addrb
-  .dinb  ( bram2_wrdata_a[11:0] ) ,    // input wire [9 : 0] dinb
-  .doutb ( bram2_rddata_a      ) // output wire [15 : 0] doutb
-                              ) ;
 
 // control the debug capture process
 // first sync debug_go to adc domain
@@ -650,7 +500,7 @@ assign debug_capture = debug_go_s;
       .INIT_SYNC_FF(1),   // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
       .SIM_ASSERT_CHK(0), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
       .SRC_INPUT_REG(0),  // DECIMAL; 0=do not register input, 1=register input
-      .WIDTH(2)           // DECIMAL; range: 1-1024
+      .WIDTH(3)           // DECIMAL; range: 1-1024
    )
    xpm_cdc_array_single_inst (
       .dest_out(dbg_mux_l), // WIDTH-bit output: src_in synchronized to the destination clock domain. This
@@ -672,37 +522,30 @@ assign debug_capture = debug_go_s;
 
 assign dbg_disable_fiford_s = disable_fiford_s[0];
 
- sync_many #( .WIDTH(1)) sync_disable_fifowr (
-    .clks ( clk_adc     ) ,
-    .ins  ( disable_fifowr   ) ,
-    .outs ( disable_fifowr_s )) ;
+ /* sync_many #( .WIDTH(1)) sync_disable_fifowr ( */
+ /*    .clks ( clk_adc     ) , */
+ /*    .ins  ( disable_fifowr   ) , */
+ /*    .outs ( disable_fifowr_s )) ; */
 
 /* now mux the debug signals into regs */
 always @(posedge clk_adc)
 begin
-    if (dbg_mux_l == 2'b00)
-    begin
-        reg0 <= re_order[9:0];
-        reg1 <= re_order[19:10];
-        reg2 <= re_order[29:20];
-    end
-    else if (dbg_mux_l == 2'b01)
-    begin
-        reg0 <= re_order[29:20];
-        reg1 <= re_order[39:30];
-        reg2 <= re_order[49:40];
-    end
-    else if (dbg_mux_l == 2'b10)
-    begin
-        reg0 <= re_order[49:40];
-        reg1 <= re_order[59:50];
-        reg2 <= re_order[69:60];
-    end else
-    begin
-        reg0 <= re_order[59:50];
-        reg1 <= re_order[69:60];
-        reg2 <= re_order[79:70];
-    end
+    if      (dbg_mux_l == 2'd0)
+        capture <= re_order[9:0];
+    else if (dbg_mux_l == 2'd1)
+        capture <= re_order[19:10];
+    else if (dbg_mux_l == 2'd2)
+        capture <= re_order[29:20];
+    else if (dbg_mux_l == 2'd3)
+        capture <= re_order[39:30];
+    else if (dbg_mux_l == 2'd4)
+        capture <= re_order[49:40];
+    else if (dbg_mux_l == 2'd5)
+        capture <= re_order[59:50];
+    else if (dbg_mux_l == 2'd6)
+        capture <= re_order[69:60];
+    else
+        capture <= re_order[79:70];
 end
 
 /* Collect 8 `channels of data for passing through Window function */

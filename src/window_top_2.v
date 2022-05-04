@@ -10,7 +10,7 @@
 `timescale 1ns/1ps
 module window_top_2  (
     input force_nowindow,
-    input disable_window,
+    /* input disable_window, */
 
     // AXI slave for coeff memory
     input         s_axi_coef_aclk    ,        // input wire s_axi_aclk
@@ -53,7 +53,7 @@ module window_top_2  (
     input         M_AXIS_TREADY // not used, we assume downstream IS_0 always ready
 );
 
-wire  disable_window_s;
+/* wire  disable_window_s; */
 
 wire [15:0] coef_data;
 wire [15:0] mult_data;
@@ -94,7 +94,7 @@ wire [`CHANNELS*25 - 1 : 0] multi_out;
             /* .P             (M_AXIS_TDATA[i*32 +: 25]) ,        // result */
             .A             ( S_AXIS_TDATA[i*16 +: 10]),     // Multiplier input A bus, width determined by WIDTH_A parameter
             .B             ( mult_data   ) ,                // Multiplier input B bus, width determined by WIDTH_B parameter
-            .CE            ( ~disable_window_s) ,        // 1-bit active high input clock enable
+            .CE            ( 1'b1) ,        // 1-bit active high input clock enable
             .CLK           ( S_AXIS_ACLK ),
             .RST           ( 1'b0      )
         ) ;
@@ -195,10 +195,10 @@ always @(posedge S_AXIS_ACLK)
  );
 
 /* sync the disable window to AXIS domain */
- sync_many #( .WIDTH(2)) sync_disable_window (
+ sync_many #( .WIDTH(1)) sync_disable_window (
     .clks ( S_AXIS_ACLK     ) ,
-    .ins  ( {disable_window   ,  force_nowindow  }) ,
-    .outs ( {disable_window_s , force_nowindow_s  })) ;
+    .ins  (  force_nowindow  ) ,
+    .outs (  force_nowindow_s)) ;
 
     endmodule
 

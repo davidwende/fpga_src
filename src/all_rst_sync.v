@@ -6,10 +6,12 @@
         input clk_adc,
         input clk_stream,
         input clk_control,
+        input clk10,
 
         input asyncrst_n,
 
         // resets in clock domains
+        output rst_clk10,
         output reg rst_adc_n,
         output reg rst_stream_n,
         output reg rst_control_n,
@@ -24,6 +26,7 @@
     );
 
 reg ff_adc;
+reg ff_10;
 reg ff_stream;
 reg ff_control;
 
@@ -32,6 +35,13 @@ reg [3:0] sel_rst_sr;
 reg long_reset;
 reg sel_io_rst_l;
 
+reg rst_clk10_n;
+
+// =============== sync to clk10 ====================
+always @ (posedge clk10 or negedge asyncrst_n)
+    if (!asyncrst_n) {rst_clk10_n, ff_10} <= 2'b0;
+    else  {rst_clk10_n, ff_10} <= {ff_10, 1'b1};
+assign rst_clk10 = !rst_clk10_n;
 // =============== sync to clk_adc ====================
 always @ (posedge clk_adc or negedge asyncrst_n)
     if (!asyncrst_n) {rst_adc_n, ff_adc} <= 2'b0;

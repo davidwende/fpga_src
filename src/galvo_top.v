@@ -60,7 +60,7 @@ module galvo_top   #(
     input rst_adc_n  ,
     input rst_control_n  ,
 
-    input disable_galvo,
+    /* input disable_galvo, */
 
     output sclk   ,
     output csn    ,
@@ -69,6 +69,11 @@ module galvo_top   #(
     input pixel_done,
     input [31:0] control,
     input [31:0] manual,
+
+    /* for read back by CPU */
+    output [10:0] galvoh,
+    output [10:0] galvov,
+
     output galvo_spi_done
 );
 
@@ -115,6 +120,8 @@ assign manual_mode = control[31];
 assign H_MAX = control[10:0];
 assign V_MAX = control[26:16];
 
+assign galvoh = h_addr;
+assign galvov = v_addr;
 
 reg go_spi, go_spi_d, go_spi_dd;
 wire spi_done;
@@ -128,18 +135,18 @@ reg pixel_done_d; // TODO must sync to this clock domain
 wire pixel_done_s;
 wire pixel_done_r;
 // Code Starts
-   xpm_cdc_array_single #(
-      .DEST_SYNC_FF(2),   // DECIMAL; range: 2-10
-      .INIT_SYNC_FF(1),   // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
-      .SIM_ASSERT_CHK(0), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
-      .SRC_INPUT_REG(0),  // DECIMAL; 0=do not register input, 1=register input
-      .WIDTH(1)           // DECIMAL; range: 1-1024
-   )
-   sync_disable_galvo (
-      .dest_out(disable_galvo_s),
-      .dest_clk(s_axi_h_aclk), // same as clk_control
-      .src_in(disable_galvo)
-   );
+   /* xpm_cdc_array_single #( */
+   /*    .DEST_SYNC_FF(2),   // DECIMAL; range: 2-10 */
+   /*    .INIT_SYNC_FF(1),   // DECIMAL; 0=disable simulation init values, 1=enable simulation init values */
+   /*    .SIM_ASSERT_CHK(0), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages */
+   /*    .SRC_INPUT_REG(0),  // DECIMAL; 0=do not register input, 1=register input */
+   /*    .WIDTH(1)           // DECIMAL; range: 1-1024 */
+   /* ) */
+   /* sync_disable_galvo ( */
+   /*    .dest_out(disable_galvo_s), */
+   /*    .dest_clk(s_axi_h_aclk), // same as clk_control */
+   /*    .src_in(disable_galvo) */
+   /* ); */
 
    xpm_cdc_pulse #(
       .DEST_SYNC_FF(2),   // DECIMAL; range: 2-10
@@ -317,9 +324,9 @@ spi_top #(
    .miso_i  (1'b0)
 );
 
-assign sclk   = (~disable_galvo_s) ? pre_sclk : 1'b0;
-assign csn    = (~disable_galvo_s) ? pre_csn : 1'b1;
-assign mosi_o = (~disable_galvo_s) ? pre_mosi_o : 1'b1;
+assign sclk   =  pre_sclk;
+assign csn    =  pre_csn;
+assign mosi_o =  pre_mosi_o;
 
 assign spi_control = {go_spi_dd, 29'b0 , 2'b01};
 assign spi_done = spi_status[0]; // clk_control domain

@@ -198,9 +198,6 @@ generate
         wire [32-1:0] intermediate_data1;
         wire [`VALUE_WIDTH-1:0] intermediate_data2;
 
-        /* assign intermediate_data1 = s_axis_data_tdata[i*32 +: 32] >> `PEAK_SHIFT; */
-        /* assign intermediate_data2 = intermediate_data1[`VALUE_WIDTH-1:0]; */
-
         peak_detect_fast_shell peak_detect_fast_shell_inst
         (
             // inputs
@@ -210,9 +207,7 @@ generate
                 .last     ( s_axis_data_tlast[i]                            ) ,
                 .last_out ( last_out[i]                                     ) ,
                 .input_i  (s_axis_data_tdata[i*32 +: `VALUE_WIDTH]          ) ,
-                /* .input_i  (intermediate_data2) , */
                 .index_i  ( new_xk[i*`INDEX_WIDTH +: `INDEX_WIDTH]                ) ,
-                /* .index_i  ( xk[i*`INDEX_WIDTH +: `INDEX_WIDTH]                ) , */
                 // outputs
                 .peaks     (peaks[i*`VALUE_WIDTH*`NUM_PEAKS +: `VALUE_WIDTH*`NUM_PEAKS] ),
                 .indices   (indices[i*`INDEX_WIDTH*`NUM_PEAKS +: `INDEX_WIDTH*`NUM_PEAKS] )
