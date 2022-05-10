@@ -26,7 +26,7 @@ output dbg_last,
 output dbg_rd_en,
 output dbg_full,
 output dbg_rst_fifo,
-output dbg_disable_fiford_s ,
+/* output dbg_disable_fiford_s , */
 output dbg_empty,
 output dbg_in_capture,
 output dbg_debug_go,
@@ -34,7 +34,6 @@ output dbg_in_pixel,
     // from & to mc
     input clk_control,
     input clk_stream,
-    input go,
     input reset_fifo,
     output dbg_go_s,
     output dbg_go_r,
@@ -43,7 +42,7 @@ output dbg_in_pixel,
      input rst_control_n,
      input rst_adc_n,
      /* input disable_fifowr, */
-     input [`CHANNELS-1:0] disable_fiford,
+     /* input [`CHANNELS-1:0] disable_fiford, */
 
      output reg [9:0] debug_data,
     // From ADC
@@ -55,6 +54,8 @@ output dbg_in_pixel,
 
     // control
     input lreset_n,
+        input last,
+        input in_pixel,
 
     input debug_go,
     input [2:0] dbg_mux,
@@ -143,12 +144,12 @@ reg  [`CHANNELS-1:0] m_axis_data_tvalid_l;
 
 /* wire [79:0] dout; */
 wire        bitslip            ;
-reg [10:0] cnt = 0;
+/* reg [10:0] cnt = 0; */
 wire [89:0] re_order;
 wire go_s;
 wire go_r;
 reg go_d;
-reg in_pixel;
+/* reg in_pixel; */
 wire last;
 wire [`CHANNELS-1:0] tlast;
 /* reg in_pixel_d; */
@@ -156,6 +157,7 @@ wire lresetn_adc;
 reg [10:0] debug_addr;
 reg in_capture;
 wire debug_go_s;
+reg running;
 
 /* pipeline registers for debug capture */
 wire [2:0] dbg_mux_l;
@@ -170,7 +172,7 @@ wire [12:0] bram0_addr_a;
 
 wire lreset_n_adc;
 
-wire [`CHANNELS-1:0] disable_fiford_s;
+/* wire [`CHANNELS-1:0] disable_fiford_s; */
 
 /* make vector of clocks */
 assign process_clks = {
@@ -237,10 +239,10 @@ generate
             .wr_clk ( clk_adc                         ) ,
             .rd_clk ( process_clks[h]                 ) ,
             .din    ( {S_AXIS_TLAST, S_AXIS_TDATA[h*16 +: 16]}    ) ,
-            .wr_en  ( S_AXIS_TVALID  ) ,
+            .wr_en  ( S_AXIS_TVALID ) ,
             /* .wr_en  ( in_pixel  ) , */
             /* .wr_en  (( in_pixel && ~disable_fifowr_s) ) , */
-            .rd_en  ( rd_en[h]                        ) ,
+            .rd_en  ( ~empty[h]                        ) ,
             /* .dout   ( {tlast[h], dout[h*10 +: 10]}    ) , */
             .dout   ( {tlast[h], fifo_data_out[h*16 +: 16]} ) ,
             .full   ( full[h]                         ) ,
@@ -270,12 +272,13 @@ assign m_axis_data7_tlast = tlast[7];
 
 
 // always read from FIFO when it is NOT empty
-genvar r;
-generate
-    for (r = 0; r < `CHANNELS; r = r + 1) begin
-        assign  rd_en[r] = (!empty[r] & !disable_fiford_s[r]);
-    end
-endgenerate
+assign  rd_en = ~empty;
+/* genvar r; */
+/* generate */
+/*     for (r = 0; r < `CHANNELS; r = r + 1) begin */
+/*         /1* assign  rd_en[r] = (!empty[r] & !disable_fiford_s[r]); *1/ */
+/*     end */
+/* endgenerate */
 
 assign dbg_rd_en = rd_en[0];
 assign dbg_empty = empty[0];
@@ -332,27 +335,27 @@ sync_reset (
                          ) ;
 
 // do the "go" for N samples (2048)
-always @(posedge clk_adc or negedge lresetn_adc)
-    if (!lresetn_adc)
-        cnt <= `PIXEL_SIZE-1;
-    else if (go_r)
-        cnt <= `PIXEL_SIZE-1;
-    else if (in_pixel)
-        cnt <= cnt - 1;
+/* always @(posedge clk_adc or negedge lresetn_adc) */
+/*     if (!lresetn_adc) */
+/*         cnt <= `PIXEL_SIZE-1; */
+/*     else if (~|cnt) */
+/*         cnt <= `PIXEL_SIZE-1; */
+/*     else */
+/*         cnt <= cnt - 1; */
 
-assign last = (cnt == 0) ? 1'b1 : 1'b0;
+/* assign last = (cnt == 0) ? 1'b1 : 1'b0; */
 assign dbg_last = last;
 assign M_AXIS_TLAST = last;
 
 /* We assume that the FIFO is NEVER full */
 // probably true since processing at more than 100MHz
-always @(posedge clk_adc or negedge lresetn_adc)
-    if (!lresetn_adc)
-        in_pixel <= 1'b0;
-    else if ( go_r)
-        in_pixel <= 1'b1;
-    else if (cnt == 0)
-        in_pixel <= 1'b0;
+/* always @(posedge clk_adc or negedge lresetn_adc) */
+/*     if (!lresetn_adc) */
+/*         in_pixel <= 1'b0; */
+/*     else if ( go_r) */
+/*         in_pixel <= 1'b1; */
+/*     else if (cnt == 0) */
+/*         in_pixel <= 1'b0; */
 
 assign M_AXIS_TVALID = in_pixel;
 
@@ -515,34 +518,22 @@ assign debug_capture = debug_go_s;
 
    );
 
- sync_many #( .WIDTH(8)) sync_disable_fiford (
-    .clks ( process_clks     ) ,
-    .ins  ( disable_fiford   ) ,
-    .outs ( disable_fiford_s )) ;
-
-assign dbg_disable_fiford_s = disable_fiford_s[0];
-
- /* sync_many #( .WIDTH(1)) sync_disable_fifowr ( */
- /*    .clks ( clk_adc     ) , */
- /*    .ins  ( disable_fifowr   ) , */
- /*    .outs ( disable_fifowr_s )) ; */
-
 /* now mux the debug signals into regs */
 always @(posedge clk_adc)
 begin
-    if      (dbg_mux_l == 2'd0)
+    if      (dbg_mux_l == 0)
         capture <= re_order[9:0];
-    else if (dbg_mux_l == 2'd1)
+    else if (dbg_mux_l == 1)
         capture <= re_order[19:10];
-    else if (dbg_mux_l == 2'd2)
+    else if (dbg_mux_l == 2)
         capture <= re_order[29:20];
-    else if (dbg_mux_l == 2'd3)
+    else if (dbg_mux_l == 3)
         capture <= re_order[39:30];
-    else if (dbg_mux_l == 2'd4)
+    else if (dbg_mux_l == 4)
         capture <= re_order[49:40];
-    else if (dbg_mux_l == 2'd5)
+    else if (dbg_mux_l == 5)
         capture <= re_order[59:50];
-    else if (dbg_mux_l == 2'd6)
+    else if (dbg_mux_l == 6)
         capture <= re_order[69:60];
     else
         capture <= re_order[79:70];

@@ -4,6 +4,8 @@ create_clock -period 10.000 -name ADC_CLK -waveform {0.000 5.000} [get_ports adc
 set_clock_groups -name g1 -asynchronous -group [get_clocks clk_fpga_0] -group [get_clocks -of_objects [get_pins multiphase_i/clk_wiz_0/inst/plle2_adv_inst/CLKOUT0]] -group [get_clocks -of_objects [get_pins multiphase_i/clk_wiz_0/inst/plle2_adv_inst/CLKOUT1]] -group [get_clocks -of_objects [get_pins multiphase_i/clk_wiz_0/inst/plle2_adv_inst/CLKOUT2]]
 set_clock_groups -name g2 -asynchronous -group [get_clocks clk_fpga_0] -group [get_clocks clk_fpga_1]
 set_clock_groups -name g3 -asynchronous -group [get_clocks clk_fpga_1] -group [get_clocks -of_objects [get_pins multiphase_i/adc_input/inst/clkout_buf_inst/O]]
+set_clock_groups -name g4 -asynchronous -group [get_clocks clk_fpga_2] -group [get_clocks clk_fpga_0]
+set_clock_groups -name g4 -asynchronous -group [get_clocks clk_fpga_2] -group [get_clocks clk_fpga_1]
 
 set_false_path -to [get_pins -hierarchical {*sync1_s_reg/D *sync1_ss_reg/D ack_reg/D *sync1_reg/D {*sync1_reg[*]/D}}]
 

@@ -3,6 +3,9 @@
 `ifndef __david__
 `define __david__ 1
 
+`define MAJ_VERSION 1
+`define MIN_VERSION 7
+
 `define CHANNELS 8
 
 // fft 2048 / 24 / 11

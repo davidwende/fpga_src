@@ -125,7 +125,34 @@ module fft_top_2  (
             output reg  [`CHANNELS*`INDEX_WIDTH-1:0] xk,  // changes for different fft lengths
 
             // output flags
-            output [6:0] fft_events
+            output [6:0] fft_events,
+
+        // AXI to debug fft capture memory
+    input fft_capture,
+    input clk_control,
+    input rst_control_n,
+
+    input         s_axi_fft_aclk    ,        // input wire s_axi_aclk
+    input         s_axi_fft_aresetn ,  // input wire s_axi_aresetn
+    input [12:0]  s_axi_fft_awaddr  ,    // input wire [13 : 0] s_axi_awaddr
+    input [2:0]   s_axi_fft_awprot  ,    // input wire [2 : 0] s_axi_awprot
+    input         s_axi_fft_awvalid ,  // input wire s_axi_awvalid
+    output        s_axi_fft_awready ,  // output wire s_axi_awready
+    input [31:0]  s_axi_fft_wdata   ,      // input wire [31 : 0] s_axi_wdata
+    input [3:0]   s_axi_fft_wstrb   ,      // input wire [3 : 0] s_axi_wstrb
+    input         s_axi_fft_wvalid  ,    // input wire s_axi_wvalid
+    output        s_axi_fft_wready  ,    // output wire s_axi_wready
+    output [1:0]  s_axi_fft_bresp   ,      // output wire [1 : 0] s_axi_bresp
+    output        s_axi_fft_bvalid  ,    // output wire s_axi_bvalid
+    input         s_axi_fft_bready  ,    // input wire s_axi_bready
+    input [12:0]  s_axi_fft_araddr  ,    // input wire [13 : 0] s_axi_araddr
+    input [2:0]   s_axi_fft_arprot  ,    // input wire [2 : 0] s_axi_arprot
+    input         s_axi_fft_arvalid ,  // input wire s_axi_arvalid
+    output        s_axi_fft_arready ,  // output wire s_axi_arready
+    output [31:0] s_axi_fft_rdata   ,      // output wire [31 : 0] s_axi_rdata
+    output [1:0]  s_axi_fft_rresp   ,      // output wire [1 : 0] s_axi_rresp
+    output        s_axi_fft_rvalid  ,    // output wire s_axi_rvalid
+    input         s_axi_fft_rready        // input wire s_axi_rready
         );
 
 wire [`CHANNELS-1:0] process_clks;
@@ -159,6 +186,19 @@ wire [`CHANNELS-1 : 0] s_axis_config_tready;
 wire [`CHANNELS-1 : 0] s_axis_data_tready;
 wire [`CHANNELS*32 - 1 : 0] data_out;
 reg  [`CHANNELS*32 - 1 : 0] r_data_out;
+
+/* debug capture */
+reg [10:0] debug_addr;
+reg in_capture;
+wire fft_capture_wren;
+reg trig_capture;
+wire fft_capture_s;
+wire        bram_clk_a;
+wire        bram_en_a;
+wire [3:0]  bram_we_a;
+wire [31:0] bram_wrdata_a;
+wire [31:0] bram_rddata_a;
+wire [12:0] bram_addr_a;
 
 /* make vector of clocks */
 assign process_clks = {
@@ -418,6 +458,98 @@ sync_many #
         .ins   ({8{reset}}),
         .outs (resets)
 	);
+
+
+/* first sync to fft clock domain */
+   xpm_cdc_pulse #(
+      .DEST_SYNC_FF(2),
+      .INIT_SYNC_FF(1),
+      .REG_OUTPUT(0),
+      .RST_USED(1),
+      .SIM_ASSERT_CHK(0)
+   )
+   xpm_cdc_pulse_fft (
+      .dest_pulse(fft_capture_s),
+      .dest_clk(process_clks[0]),
+      .dest_rst(resets[0]),
+      .src_clk(clk_control),
+      .src_pulse(fft_capture),
+      .src_rst(!rst_control_n)
+   );
+always @ (posedge process_clks[0])
+    if (resets[0])
+        trig_capture <= 1'b0;
+    else if (fft_capture_s)
+        trig_capture <= 1'b1;
+    else if (&debug_addr)
+        trig_capture <= 1'b0;
+
+always @ (posedge process_clks[0])
+    if (resets[0])
+        in_capture <= 1'b0;
+    else if (trig_capture && m_axis_data0_tvalid && m_axis_data0_tlast)
+        in_capture <= 1'b1;
+    else if (&debug_addr)
+        in_capture <= 1'b0;
+
+always @ (posedge process_clks[0])
+    if (resets[0])
+        debug_addr <= 0;
+    else if (fft_capture_s)
+        debug_addr <= 0;
+    else if (in_capture && m_axis_data0_tvalid && ~&debug_addr)
+        debug_addr <= debug_addr + 1;
+
+// controller for memory for capture
+bram_ctrl_2k bram_ctrl_capture (
+  .s_axi_aclk    ( s_axi_fft_aclk    ) ,        // input wire s_axi_aclk
+  .s_axi_aresetn ( s_axi_fft_aresetn ) ,  // input wire s_axi_aresetn
+  .s_axi_awaddr  ( s_axi_fft_awaddr  ) ,    // input wire [13 : 0] s_axi_awaddr
+  .s_axi_awprot  ( s_axi_fft_awprot  ) ,    // input wire [2 : 0] s_axi_awprot
+  .s_axi_awvalid ( s_axi_fft_awvalid ) ,  // input wire s_axi_awvalid
+  .s_axi_awready ( s_axi_fft_awready ) ,  // output wire s_axi_awready
+  .s_axi_wdata   ( s_axi_fft_wdata   ) ,      // input wire [31 : 0] s_axi_wdata
+  .s_axi_wstrb   ( s_axi_fft_wstrb   ) ,      // input wire [3 : 0] s_axi_wstrb
+  .s_axi_wvalid  ( s_axi_fft_wvalid  ) ,    // input wire s_axi_wvalid
+  .s_axi_wready  ( s_axi_fft_wready  ) ,    // output wire s_axi_wready
+  .s_axi_bresp   ( s_axi_fft_bresp   ) ,      // output wire [1 : 0] s_axi_bresp
+  .s_axi_bvalid  ( s_axi_fft_bvalid  ) ,    // output wire s_axi_bvalid
+  .s_axi_bready  ( s_axi_fft_bready  ) ,    // input wire s_axi_bready
+  .s_axi_araddr  ( s_axi_fft_araddr  ) ,    // input wire [13 : 0] s_axi_araddr
+  .s_axi_arprot  ( s_axi_fft_arprot  ) ,    // input wire [2 : 0] s_axi_arprot
+  .s_axi_arvalid ( s_axi_fft_arvalid ) ,  // input wire s_axi_arvalid
+  .s_axi_arready ( s_axi_fft_arready ) ,  // output wire s_axi_arready
+  .s_axi_rdata   ( s_axi_fft_rdata   ) ,      // output wire [31 : 0] s_axi_rdata
+  .s_axi_rresp   ( s_axi_fft_rresp   ) ,      // output wire [1 : 0] s_axi_rresp
+  .s_axi_rvalid  ( s_axi_fft_rvalid  ) ,    // output wire s_axi_rvalid
+  .s_axi_rready  ( s_axi_fft_rready  ) ,    // input wire s_axi_rready
+
+  .bram_rst_a    ( ) ,        // output wire bram_rst_a
+  .bram_clk_a    ( bram_clk_a    ) ,        // output wire bram_clk_a
+  .bram_en_a     ( bram_en_a     ) ,          // output wire bram_en_a
+  .bram_we_a     ( bram_we_a     ) ,          // output wire [3 : 0] bram_we_a
+  .bram_addr_a   ( bram_addr_a   ) ,      // output wire [13 : 0] bram_addr_a
+  .bram_wrdata_a ( bram_wrdata_a ) ,  // output wire [31 : 0] bram_wrdata_a
+  .bram_rddata_a ( bram_rddata_a )
+);
+
+dpram_2kx12 debug_dpram (
+  .clka                 ( process_clks[0] ) ,    // input wire clka
+  .ena                  ( 1'b1     ) ,      // input wire ena
+  .wea                  ( fft_capture_wren     ) ,      // input wire [0 : 0] wea
+  .addra                ( debug_addr   ) ,  // input wire [9 : 0] addra
+  .dina                 ( m_axis_data0_tdata  ) ,    // input wire [9 : 0] dina
+  .douta                (             ) ,  // output wire [9 : 0] douta
+
+  .clkb  ( bram_clk_a         ) ,    // input wire clkb
+  .enb   ( bram_en_a          ) ,      // input wire enb
+  .web   ( bram_we_a[0]       ) ,      // input wire [0 : 0] web
+  .addrb ( bram_addr_a[12:2]  ) ,  // input wire [9 : 0] addrb
+  .dinb  ( bram_wrdata_a ) ,    // input wire [9 : 0] dinb
+  .doutb ( bram_rddata_a      ) // output wire [15 : 0] doutb
+                              ) ;
+
+assign fft_capture_wren = (in_capture && m_axis_data0_tvalid);
 
 endmodule
 

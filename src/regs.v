@@ -304,7 +304,7 @@ assign out_reg16 = slv_reg16;
 	      slv_reg13 <= 0;
 	      slv_reg14 <= 0;
 	      slv_reg15 <= 0;
-	      slv_reg15 <= 0;
+	      slv_reg16 <= 0;
 	    end
 	  else begin
 	    if (slv_reg_wren)

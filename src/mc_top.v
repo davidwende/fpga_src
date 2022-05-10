@@ -1,6 +1,7 @@
 // Module
 // Function : Master Controller for timing Galvo and pixels flow
 //
+`include "constants.vh"
 `timescale 1ns/1ps
 module mc_top
 (
@@ -30,7 +31,7 @@ module mc_top
     output reg force_nowindow,
 
     /* output disable_fifowr, */
-    output [7:0] disable_fiford,
+    /* output [7:0] disable_fiford, */
     /* output disable_galvo, */
     /* output disable_window, */
     /* output disable_fft, */
@@ -51,10 +52,14 @@ module mc_top
     output [31:0] debug_status, // control domain
         //
     /* capture an input channel from adc */
-    output debug_go, // to input_top, make it start capturing debug buffer
-    output [2:0] dbg_mux,
+    output input_debug_go, // to input_top, make it start capturing debug buffer
+    output reg [2:0] dbg_mux,
 
-    output reg go // to input_top, make it start sampling a pixel
+    output fft_capture, // to fft, make it start capturing debug buffer
+
+    output reg in_pixel,
+    output reg last,
+    output reg galvo_go
     );
 
 // reset adc and pm
@@ -112,9 +117,10 @@ wire force_nowindow_set;
 wire select_average_clr;
 wire select_average_set;
 
-wire [9:0] cycle_time;
-wire [9:0] cycle_time_s;
-reg  [9:0] count;
+wire [11:0] cycle_time;
+reg  [11:0] cycle_time_h;
+wire [11:0] cycle_time_s;
+reg  [11:0] count;
 
 wire [10:0] galvov_s;
 wire [10:0] galvoh_s;
@@ -123,12 +129,28 @@ wire [10:0] galvoh_s;
 wire [3:0] run_type;
 wire [3:0] run_type_s;
 reg running;
+wire running_s;
+wire run;
+wire halt;
+wire cycle_time_v;
+wire [11:0] cycle_time;
+wire [15:0] version;
 
+assign version = {`MAJ_VERSION, `MIN_VERSION};
 /* breakout control register */
 assign run                = control[31];
 assign halt               = control[30];
-assign rst_peak_ready     = control[11];
-assign cycle_time         = control[9:0];
+assign rst_peak_ready     = control[29];
+assign cycle_time_v       = control[15];
+assign cycle_time         = control[11:0];
+
+always @ (posedge clk_control)
+    if (!rst_control_n)
+        running <= 0;
+    else if (run)
+        running <= 1;
+    else if (halt)
+        running <= 0;
 
 /* collect for status read */
 assign status = {
@@ -142,7 +164,7 @@ assign status = {
 
 /* collect for debug read */
 assign debug_status = {
-    16'h0,
+    version,
     bitslipcnt_s,
     1'b0,
     fftevents_s
@@ -150,16 +172,32 @@ assign debug_status = {
 
 /* breakout debug and resets register */
 
+wire fft_capture_l;
+reg fft_capture_d;
+wire [2:0] dbg_mux_i;
+
 assign force_nowindow_clr = debug[17];
 assign force_nowindow_set = debug[16];
-assign dbg_mux            = debug[15:12];
+assign dbg_mux_i          = debug[14:12];
+assign input_debug_go     = debug[8];
+assign fft_capture_l      = debug[7];
+
 assign fifo_rst           = debug[6];
 assign fft_rst            = debug[5];
-assign debug_go           = debug[4];
 assign adc_rst            = debug[3];
 assign pm_rst             = debug[2];
 assign bitslip_rst        = debug[1];
 assign fft_event_rst      = debug[0];
+
+/* latch dbg_mux */
+always @ (posedge clk_control)
+    if (input_debug_go)
+        dbg_mux <= dbg_mux_i;
+
+
+always @ (posedge clk_control)
+    fft_capture_d <= fft_capture_l;
+assign fft_capture = (fft_capture_l && !fft_capture_d);
 
 always @ (posedge clk_control)
     fft_event_rst_d <= fft_event_rst;
@@ -216,21 +254,9 @@ my_sync2 sync_done (
     .in            ( pixel_done   ) ,
     .out           ( pixel_done_s )
                                   ) ;
-
-always @ (posedge clk_stream or negedge lresetn_stream) begin
-    if (!lresetn_stream)
-        state <= IDLE;
-    else begin
-        if (~running)
-            state <= IDLE;
-        else
-            state <= state_next;
-    end
-end
-
 /* Count the 10MHz clocks and issue a GO at specific count */
-always @(clk10)
-    if (rst_clk10)
+always @(posedge clk_adc)
+    if (!rst_adc_n)
         count <= 0;
     else
         if (count == cycle_time_s )
@@ -238,21 +264,40 @@ always @(clk10)
     else
         count <= count + 1;
 
+always @(posedge clk_adc)
+    last <= (count == `PIXEL_SIZE -1 );
+always @(posedge clk_adc)
+    galvo_go = (count == `PIXEL_SIZE - 10);
+
+
+always @(posedge clk_adc)
+    if (~|count)
+        in_pixel <= running_s;
+    else if (last)
+        in_pixel <= 0;
+
+always @ (clk_control)
+    if (cycle_time_v)
+        cycle_time_h <= cycle_time;
+
 sync_many #
 	(
-		.WIDTH(10)
+		.WIDTH(12)
 	) sync_cycletime
 	(
-        .clks ({10{clk10}}),
-        .ins  (cycle_time),
+        .clks ({12{clk_adc}}),
+        .ins  (cycle_time_h),
         .outs (cycle_time_s)
 	);
-
-always @(clk10)
-    if (count == 0)
-        go <= 1;
-    else
-        go <= 0;
+sync_many #
+	(
+		.WIDTH(1)
+	) sync_running
+	(
+        .clks (clk_adc),
+        .ins  (running),
+        .outs (running_s)
+	);
 
     /* Sync the galvo current position to control domain */
 sync_many #
