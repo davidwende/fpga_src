@@ -22,6 +22,7 @@ module input_top_2  (
     output        M_AXIS_TLAST,
     input         M_AXIS_TREADY,
 
+    output dbg_wr_en,
 output dbg_last,
 output dbg_rd_en,
 output dbg_full,
@@ -35,9 +36,6 @@ output dbg_in_pixel,
     input clk_control,
     input clk_stream,
     input reset_fifo,
-    output dbg_go_s,
-    output dbg_go_r,
-    output pixel_done,
      input rst_stream_n,
      input rst_control_n,
      input rst_adc_n,
@@ -55,7 +53,7 @@ output dbg_in_pixel,
     // control
     input lreset_n,
         input last,
-        input in_pixel,
+        input sampling,
 
     input debug_go,
     input [2:0] dbg_mux,
@@ -133,6 +131,7 @@ output dbg_in_pixel,
     output wire m_axis_data7_tlast
 
     );
+    assign dbg_wr_en = S_AXIS_TVALID;
 
 wire [`CHANNELS*16 - 1 : 0] fifo_data_out;
 wire [`CHANNELS-1:0] process_clks;
@@ -146,13 +145,8 @@ reg  [`CHANNELS-1:0] m_axis_data_tvalid_l;
 wire        bitslip            ;
 /* reg [10:0] cnt = 0; */
 wire [89:0] re_order;
-wire go_s;
-wire go_r;
-reg go_d;
-/* reg in_pixel; */
 wire last;
 wire [`CHANNELS-1:0] tlast;
-/* reg in_pixel_d; */
 wire lresetn_adc;
 reg [10:0] debug_addr;
 reg in_capture;
@@ -347,52 +341,10 @@ sync_reset (
 assign dbg_last = last;
 assign M_AXIS_TLAST = last;
 
-/* We assume that the FIFO is NEVER full */
-// probably true since processing at more than 100MHz
-/* always @(posedge clk_adc or negedge lresetn_adc) */
-/*     if (!lresetn_adc) */
-/*         in_pixel <= 1'b0; */
-/*     else if ( go_r) */
-/*         in_pixel <= 1'b1; */
-/*     else if (cnt == 0) */
-/*         in_pixel <= 1'b0; */
-
-assign M_AXIS_TVALID = in_pixel;
+assign M_AXIS_TVALID = sampling;
 
 /* always @(posedge clk_adc) */
-assign dbg_in_pixel = in_pixel;
-assign dbg_go_r = go_r;
-
-   xpm_cdc_pulse #(
-      .DEST_SYNC_FF(2),   // DECIMAL; range: 2-10
-      .INIT_SYNC_FF(1),   // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
-      .REG_OUTPUT(0),     // DECIMAL; 0=disable registered output, 1=enable registered output
-      .RST_USED(1),       // DECIMAL; 0=no reset, 1=implement reset
-      .SIM_ASSERT_CHK(0)  // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
-   )
-   xpm_cdc_pulse_go (
-      .dest_pulse(go_s),
-      .dest_clk(clk_adc),
-      .dest_rst(!rst_adc_n),
-      .src_clk(clk_stream),
-      .src_pulse(go),
-      .src_rst(!rst_stream_n));
-
-assign dbg_go_s = go_s;
-
-always @(posedge clk_adc)
-    go_d <= go_s;
-
-assign go_r = (go_s && !go_d) ? 1'b1 : 1'b0;
-
-
-edge_detect #(
-    .TYPE (0)  // 0 falling , 1 rising
-) edge_pixel_done_f (
-    .clk ( clk_adc),
-    .o   ( pixel_done),
-    .i   ( in_pixel)
-);
+assign dbg_in_pixel = sampling;
 
 // controller for memory for capture
 bram_ctrl_2k bram_ctrl_capture0 (
@@ -475,8 +427,7 @@ dpram_2kx12 debug_dpram_ch0 (
       .src_rst(!rst_control_n)        // 1-bit input: optional; required when RST_USED = 1
    );
 
-always @ (posedge clk_adc or negedge rst_adc_n)
-    /* if (lreset_n) */
+always @ (posedge clk_adc)
     if (!rst_adc_n)
         in_capture <= 1'b0;
     else if (debug_go_s)

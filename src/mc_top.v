@@ -41,7 +41,6 @@ module mc_top
     input [10:0] galvoh,
     input [10:0] galvov,
 
-    input pixel_done, // from input_top, signals that it finished sampling a pixel
     input galvo_spi_done, // in clk_adc domain
     input [8:0] bitslips, // in clk_adc domain
     /* control and status */
@@ -57,10 +56,18 @@ module mc_top
 
     output fft_capture, // to fft, make it start capturing debug buffer
 
-    output reg in_pixel,
+    output reg sampling,
+
+    output dbg_running,
+    output dbg_running_s,
+    output [7:0] dbg_count,
+
     output reg last,
     output reg galvo_go
     );
+
+assign dbg_running = running;
+assign dbg_running_s = running_s;
 
 // reset adc and pm
 wire adc_rst, pm_rst;
@@ -95,12 +102,9 @@ reg [6:0] fft_event_reg;
 wire [6:0] fftevents_s;
 wire [6:0] fft_event_reg_s;
 
-wire pixel_done_s;
 /* reg [5:0]   cnt; // make larger in real life */
 reg  [1:0] state, state_next;
 reg  [1:0] rstate, rstate_next;
-parameter IDLE = 0, DO_GALVO_SPI = 1, DO_PIXEL = 2, DO_PIXEL_WAIT = 3;
-parameter rIDLE = 0, rCOUNT_DOWN = 1, rDONE = 2;
 
 reg have_clk_div;
 wire reset_clk_div;
@@ -129,6 +133,7 @@ wire [10:0] galvoh_s;
 wire [3:0] run_type;
 wire [3:0] run_type_s;
 reg running;
+reg tc;
 wire running_s;
 wire run;
 wire halt;
@@ -194,7 +199,6 @@ always @ (posedge clk_control)
     if (input_debug_go)
         dbg_mux <= dbg_mux_i;
 
-
 always @ (posedge clk_control)
     fft_capture_d <= fft_capture_l;
 assign fft_capture = (fft_capture_l && !fft_capture_d);
@@ -246,35 +250,37 @@ always @ (posedge clk_control or negedge rst_control_n)
 
 // TODO add field to control for wait after galvo done before new pixel
 
-my_sync2 sync_done (
-    .reset_n_in     ( rst_adc_n        ) ,
-    .reset_n_out    ( rst_stream_n        ) ,
-    .clkin         ( clk_adc      ) ,
-    .clkout        ( clk_stream          ) ,
-    .in            ( pixel_done   ) ,
-    .out           ( pixel_done_s )
-                                  ) ;
 /* Count the 10MHz clocks and issue a GO at specific count */
 always @(posedge clk_adc)
     if (!rst_adc_n)
         count <= 0;
     else
-        if (count == cycle_time_s )
+        if (count == `PIXEL_SIZE-1 )
+        /* if (count == cycle_time_s ) */
             count <= 0;
     else
         count <= count + 1;
+
+always @(posedge clk_adc)
+    if (count == `PIXEL_SIZE-1 )
+        tc <= 1'b1;
+    else
+        tc <= 1'b0;
+
+always @(posedge clk_adc)
+    if (!rst_adc_n)
+        sampling <= 1'b0;
+    else if (tc && running_s)
+        sampling <= 1'b1;
+    else if (tc && !running_s)
+        sampling <= 1'b0;
 
 always @(posedge clk_adc)
     last <= (count == `PIXEL_SIZE -1 );
 always @(posedge clk_adc)
     galvo_go = (count == `PIXEL_SIZE - 10);
 
-
-always @(posedge clk_adc)
-    if (~|count)
-        in_pixel <= running_s;
-    else if (last)
-        in_pixel <= 0;
+assign dbg_count = count[7:0];
 
 always @ (clk_control)
     if (cycle_time_v)

@@ -5,6 +5,9 @@
 module spi_adc_pm
 (
     // AXI to vector memories
+    output dbg_control31,
+    output dbg_status,
+
     input [31:0] control_adc,        // input wire s_axi_aclk
     input [31:0] control_pm0,        // input wire s_axi_aclk
     input [31:0] control_pm1,        // input wire s_axi_aclk
@@ -53,6 +56,9 @@ module spi_adc_pm
    output mosi_pm2 ,
    input pm2_miso
 );
+
+assign dbg_control31 = control_adc[31];
+assign dbg_status = status_adc[0];
 
 wire adc_status;
 wire pm0_status;

@@ -135,6 +135,7 @@ xilinx.com:ip:axi_mm2s_mapper:*\
 xilinx.com:ip:clk_wiz:*\
 xilinx.com:ip:proc_sys_reset:*\
 xilinx.com:ip:processing_system7:*\
+xilinx.com:ip:xlconcat:*\
 xilinx.com:ip:xlconstant:*\
 xilinx.com:ip:xlslice:*\
 "
@@ -680,7 +681,7 @@ proc create_root_design { parentCell } {
    CONFIG.PCW_ACT_FPGA0_PERIPHERAL_FREQMHZ {125.000000} \
    CONFIG.PCW_ACT_FPGA1_PERIPHERAL_FREQMHZ {50.000000} \
    CONFIG.PCW_ACT_FPGA2_PERIPHERAL_FREQMHZ {10.000000} \
-   CONFIG.PCW_ACT_FPGA3_PERIPHERAL_FREQMHZ {10.000000} \
+   CONFIG.PCW_ACT_FPGA3_PERIPHERAL_FREQMHZ {200.000000} \
    CONFIG.PCW_ACT_I2C_PERIPHERAL_FREQMHZ {50} \
    CONFIG.PCW_ACT_PCAP_PERIPHERAL_FREQMHZ {200.000000} \
    CONFIG.PCW_ACT_QSPI_PERIPHERAL_FREQMHZ {200.000000} \
@@ -722,7 +723,7 @@ proc create_root_design { parentCell } {
    CONFIG.PCW_CLK0_FREQ {125000000} \
    CONFIG.PCW_CLK1_FREQ {50000000} \
    CONFIG.PCW_CLK2_FREQ {10000000} \
-   CONFIG.PCW_CLK3_FREQ {10000000} \
+   CONFIG.PCW_CLK3_FREQ {200000000} \
    CONFIG.PCW_CORE0_FIQ_INTR {0} \
    CONFIG.PCW_CORE0_IRQ_INTR {0} \
    CONFIG.PCW_CORE1_FIQ_INTR {0} \
@@ -783,7 +784,7 @@ proc create_root_design { parentCell } {
    CONFIG.PCW_EN_CLK0_PORT {1} \
    CONFIG.PCW_EN_CLK1_PORT {1} \
    CONFIG.PCW_EN_CLK2_PORT {1} \
-   CONFIG.PCW_EN_CLK3_PORT {0} \
+   CONFIG.PCW_EN_CLK3_PORT {1} \
    CONFIG.PCW_EN_CLKTRIG0_PORT {0} \
    CONFIG.PCW_EN_CLKTRIG1_PORT {0} \
    CONFIG.PCW_EN_CLKTRIG2_PORT {0} \
@@ -852,20 +853,20 @@ proc create_root_design { parentCell } {
    CONFIG.PCW_FCLK2_PERIPHERAL_DIVISOR0 {10} \
    CONFIG.PCW_FCLK2_PERIPHERAL_DIVISOR1 {10} \
    CONFIG.PCW_FCLK3_PERIPHERAL_CLKSRC {IO PLL} \
-   CONFIG.PCW_FCLK3_PERIPHERAL_DIVISOR0 {1} \
+   CONFIG.PCW_FCLK3_PERIPHERAL_DIVISOR0 {5} \
    CONFIG.PCW_FCLK3_PERIPHERAL_DIVISOR1 {1} \
    CONFIG.PCW_FCLK_CLK0_BUF {TRUE} \
    CONFIG.PCW_FCLK_CLK1_BUF {TRUE} \
    CONFIG.PCW_FCLK_CLK2_BUF {TRUE} \
-   CONFIG.PCW_FCLK_CLK3_BUF {FALSE} \
+   CONFIG.PCW_FCLK_CLK3_BUF {TRUE} \
    CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ {125} \
    CONFIG.PCW_FPGA1_PERIPHERAL_FREQMHZ {50} \
    CONFIG.PCW_FPGA2_PERIPHERAL_FREQMHZ {10} \
-   CONFIG.PCW_FPGA3_PERIPHERAL_FREQMHZ {50} \
+   CONFIG.PCW_FPGA3_PERIPHERAL_FREQMHZ {200} \
    CONFIG.PCW_FPGA_FCLK0_ENABLE {1} \
    CONFIG.PCW_FPGA_FCLK1_ENABLE {1} \
    CONFIG.PCW_FPGA_FCLK2_ENABLE {1} \
-   CONFIG.PCW_FPGA_FCLK3_ENABLE {0} \
+   CONFIG.PCW_FPGA_FCLK3_ENABLE {1} \
    CONFIG.PCW_GP0_EN_MODIFIABLE_TXN {1} \
    CONFIG.PCW_GP0_NUM_READ_THREADS {4} \
    CONFIG.PCW_GP0_NUM_WRITE_THREADS {4} \
@@ -1457,7 +1458,7 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
    CONFIG.PCW_USE_FABRIC_INTERRUPT {0} \
    CONFIG.PCW_USE_HIGH_OCM {0} \
    CONFIG.PCW_USE_M_AXI_GP0 {1} \
-   CONFIG.PCW_USE_M_AXI_GP1 {0} \
+   CONFIG.PCW_USE_M_AXI_GP1 {1} \
    CONFIG.PCW_USE_PROC_EVENT_BUS {0} \
    CONFIG.PCW_USE_PS_SLCR_REGISTERS {0} \
    CONFIG.PCW_USE_S_AXI_ACP {0} \
@@ -1477,6 +1478,12 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
    CONFIG.PCW_WDT_WDT_IO {EMIO} \
  ] $processing_system7_0
 
+  # Create instance: ps7_0_axi_periph, and set properties
+  set ps7_0_axi_periph [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect ps7_0_axi_periph ]
+  set_property -dict [ list \
+   CONFIG.NUM_MI {1} \
+ ] $ps7_0_axi_periph
+
   # Create instance: regs_0, and set properties
   set block_name regs
   set block_cell_name regs_0
@@ -1488,6 +1495,9 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
      return 1
    }
   
+  # Create instance: rst_ps7_0_200M, and set properties
+  set rst_ps7_0_200M [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset rst_ps7_0_200M ]
+
   # Create instance: selectio_pm0, and set properties
   set selectio_pm0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:selectio_wiz selectio_pm0 ]
   set_property -dict [ list \
@@ -1590,6 +1600,12 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
      return 1
    }
   
+  # Create instance: xlconcat_0, and set properties
+  set xlconcat_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat xlconcat_0 ]
+  set_property -dict [ list \
+   CONFIG.NUM_PORTS {8} \
+ ] $xlconcat_0
+
   # Create instance: xlconstant_0, and set properties
   set xlconstant_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant xlconstant_0 ]
   set_property -dict [ list \
@@ -1602,12 +1618,6 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
    CONFIG.CONST_VAL {0} \
    CONFIG.CONST_WIDTH {32} \
  ] $xlconstant_1
-
-  # Create instance: xlconstant_2, and set properties
-  set xlconstant_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant xlconstant_2 ]
-  set_property -dict [ list \
-   CONFIG.CONST_VAL {0} \
- ] $xlconstant_2
 
   # Create instance: xlconstant_3, and set properties
   set xlconstant_3 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant xlconstant_3 ]
@@ -1658,13 +1668,13 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
   connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins processing_system7_0/DDR]
   connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7_0/FIXED_IO]
   connect_bd_intf_net -intf_net processing_system7_0_M_AXI_GP0 [get_bd_intf_pins processing_system7_0/M_AXI_GP0] [get_bd_intf_pins xmux/S00_AXI]
+  connect_bd_intf_net -intf_net processing_system7_0_M_AXI_GP1 [get_bd_intf_pins processing_system7_0/M_AXI_GP1] [get_bd_intf_pins ps7_0_axi_periph/S00_AXI]
+  connect_bd_intf_net -intf_net ps7_0_axi_periph_M00_AXI [get_bd_intf_pins peak_top_2_0/s_axi] [get_bd_intf_pins ps7_0_axi_periph/M00_AXI]
   connect_bd_intf_net -intf_net selectio_wiz_2_diff_clk_to_pins [get_bd_intf_ports pm0_clk] [get_bd_intf_pins selectio_pm0/diff_clk_to_pins]
   connect_bd_intf_net -intf_net selectio_wiz_3_diff_clk_to_pins [get_bd_intf_ports pm1_clk] [get_bd_intf_pins selectio_pm1/diff_clk_to_pins]
   connect_bd_intf_net -intf_net selectio_wiz_4_diff_clk_to_pins [get_bd_intf_ports pm2_clk] [get_bd_intf_pins selectio_pm2/diff_clk_to_pins]
   connect_bd_intf_net -intf_net window_top_2_0_M_AXIS [get_bd_intf_pins input_top_2_0/S_AXIS] [get_bd_intf_pins window_top_2_0/M_AXIS]
   connect_bd_intf_net -intf_net xmux_M00_AXI [get_bd_intf_pins regs_0/S_AXI] [get_bd_intf_pins xmux/M00_AXI]
-  connect_bd_intf_net -intf_net xmux_M01_AXI [get_bd_intf_pins peak_top_2_0/s_axi_idx] [get_bd_intf_pins xmux/M01_AXI]
-  connect_bd_intf_net -intf_net xmux_M02_AXI [get_bd_intf_pins peak_top_2_0/s_axi_peak] [get_bd_intf_pins xmux/M02_AXI]
   connect_bd_intf_net -intf_net xmux_M03_AXI [get_bd_intf_pins galvo_top_0/s_axi_h] [get_bd_intf_pins xmux/M03_AXI]
   connect_bd_intf_net -intf_net xmux_M04_AXI [get_bd_intf_pins galvo_top_0/s_axi_v] [get_bd_intf_pins xmux/M04_AXI]
   connect_bd_intf_net -intf_net xmux_M05_AXI [get_bd_intf_pins window_top_2_0/s_axi_coef] [get_bd_intf_pins xmux/M05_AXI]
@@ -1709,25 +1719,23 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
   connect_bd_net -net gpio_0_rstn_adc [get_bd_ports rstn_adc] [get_bd_pins mc_top_0/rstn_adc]
   connect_bd_net -net gpio_0_rstn_pm [get_bd_ports rstn_pm] [get_bd_pins mc_top_0/rstn_pm]
   connect_bd_net -net input_top_0_bitslips [get_bd_pins adc_input/bitslip] [get_bd_pins input_top_2_0/bitslips] [get_bd_pins mc_top_0/bitslips] [get_bd_pins xlslice_0/Din]
-  connect_bd_net -net input_top_0_pixel_done [get_bd_pins input_top_2_0/pixel_done] [get_bd_pins mc_top_0/pixel_done]
-  connect_bd_net -net input_top_2_0_dbg_empty7 [get_bd_pins input_top_2_0/dbg_empty] [get_bd_pins vga_0/dbgA4]
-  connect_bd_net -net input_top_2_0_dbg_full [get_bd_pins input_top_2_0/dbg_full] [get_bd_pins vga_0/dbgB1]
-  connect_bd_net -net input_top_2_0_dbg_go_r [get_bd_pins input_top_2_0/dbg_go_r] [get_bd_pins vga_0/dbgB0]
-  connect_bd_net -net input_top_2_0_dbg_in_pixel [get_bd_pins input_top_2_0/dbg_in_pixel] [get_bd_pins vga_0/dbgA3]
-  connect_bd_net -net input_top_2_0_dbg_last [get_bd_pins input_top_2_0/dbg_last] [get_bd_pins vga_0/dbgB3]
-  connect_bd_net -net input_top_2_0_dbg_rd_en7 [get_bd_pins input_top_2_0/dbg_rd_en] [get_bd_pins vga_0/dbgA5]
-  connect_bd_net -net input_top_2_0_dbg_rst_fifo [get_bd_pins input_top_2_0/dbg_rst_fifo] [get_bd_pins vga_0/dbgB2]
-  connect_bd_net -net input_top_2_0_debug_capture [get_bd_pins input_top_2_0/debug_capture]
+  connect_bd_net -net input_top_2_0_dbg_empty7 [get_bd_pins input_top_2_0/dbg_empty] [get_bd_pins xlconcat_0/In4]
+  connect_bd_net -net input_top_2_0_dbg_in_capture [get_bd_pins input_top_2_0/dbg_in_capture] [get_bd_pins xlconcat_0/In7]
+  connect_bd_net -net input_top_2_0_dbg_last [get_bd_pins input_top_2_0/dbg_last] [get_bd_pins xlconcat_0/In3]
+  connect_bd_net -net input_top_2_0_dbg_wr_en [get_bd_pins input_top_2_0/dbg_wr_en] [get_bd_pins xlconcat_0/In2]
+  connect_bd_net -net input_top_2_0_debug_capture [get_bd_pins input_top_2_0/debug_capture] [get_bd_pins xlconcat_0/In6]
+  connect_bd_net -net input_top_2_0_debug_data [get_bd_pins input_top_2_0/debug_data] [get_bd_pins vga_0/dbgB]
   connect_bd_net -net mc_top_0_dbg_mux [get_bd_pins input_top_2_0/dbg_mux] [get_bd_pins mc_top_0/dbg_mux]
+  connect_bd_net -net mc_top_0_dbg_running [get_bd_pins mc_top_0/dbg_running] [get_bd_pins xlconcat_0/In0]
   connect_bd_net -net mc_top_0_debug_go [get_bd_pins input_top_2_0/debug_go] [get_bd_pins mc_top_0/input_debug_go]
   connect_bd_net -net mc_top_0_debug_status [get_bd_pins mc_top_0/debug_status] [get_bd_pins regs_0/in_reg16]
   connect_bd_net -net mc_top_0_fft_capture [get_bd_pins fft_top_2_0/fft_capture] [get_bd_pins mc_top_0/fft_capture]
   connect_bd_net -net mc_top_0_fft_rst [get_bd_pins fft_top_2_0/reset] [get_bd_pins mc_top_0/fft_rst]
   connect_bd_net -net mc_top_0_fifo_rst [get_bd_pins input_top_2_0/reset_fifo] [get_bd_pins mc_top_0/fifo_rst]
   connect_bd_net -net mc_top_0_force_nowindow [get_bd_pins mc_top_0/force_nowindow] [get_bd_pins window_top_2_0/force_nowindow]
-  connect_bd_net -net mc_top_0_galvo_go [get_bd_pins galvo_top_0/pixel_done] [get_bd_pins mc_top_0/galvo_go]
-  connect_bd_net -net mc_top_0_in_pixel [get_bd_pins input_top_2_0/in_pixel] [get_bd_pins mc_top_0/in_pixel]
+  connect_bd_net -net mc_top_0_galvo_go [get_bd_pins galvo_top_0/pixel_done] [get_bd_pins mc_top_0/galvo_go] [get_bd_pins xlconcat_0/In5]
   connect_bd_net -net mc_top_0_last [get_bd_pins input_top_2_0/last] [get_bd_pins mc_top_0/last]
+  connect_bd_net -net mc_top_0_sampling [get_bd_pins input_top_2_0/sampling] [get_bd_pins mc_top_0/sampling]
   connect_bd_net -net mc_top_0_sel_clk_rst [get_bd_pins adc_input/clk_reset] [get_bd_pins all_rstn_sync_0/sel_clk_rst] [get_bd_pins pm_resets_0/clk_rst_in] [get_bd_pins pm_resets_1/clk_rst_in] [get_bd_pins pm_resets_2/clk_rst_in]
   connect_bd_net -net mc_top_0_sel_io_rst [get_bd_pins adc_input/io_reset] [get_bd_pins all_rstn_sync_0/sel_io_rst] [get_bd_pins pm_resets_0/io_rst_in] [get_bd_pins pm_resets_1/io_rst_in] [get_bd_pins pm_resets_2/io_rst_in]
   connect_bd_net -net mc_top_0_select_average [get_bd_pins mc_top_0/select_average] [get_bd_pins mult_add_top_2_0/select_average]
@@ -1747,9 +1755,10 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
   connect_bd_net -net pm_top_1_data_out_from_device [get_bd_pins pm_top_1/data_out_from_device] [get_bd_pins selectio_pm1/data_out_from_device]
   connect_bd_net -net pm_top_2_data_out_from_device [get_bd_pins pm_top_2/data_out_from_device] [get_bd_pins selectio_pm2/data_out_from_device]
   connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins all_rstn_sync_0/clk_stream] [get_bd_pins clk_wiz_1/clk_in1] [get_bd_pins fft_top_2_0/m_axis_data0_aclk] [get_bd_pins fft_top_2_0/s_axis_data0_aclk] [get_bd_pins input_top_2_0/clk_stream] [get_bd_pins input_top_2_0/m_axis_data0_aclk] [get_bd_pins mc_top_0/clk_stream] [get_bd_pins mult_add_top_2_0/m_axis_data0_aclk] [get_bd_pins mult_add_top_2_0/s_axis_data0_aclk] [get_bd_pins peak_top_2_0/s_axis_data0_aclk] [get_bd_pins pm_resets_0/src_clk] [get_bd_pins pm_resets_1/src_clk] [get_bd_pins pm_resets_2/src_clk] [get_bd_pins processing_system7_0/FCLK_CLK0]
-  connect_bd_net -net processing_system7_0_FCLK_CLK1 [get_bd_pins all_rstn_sync_0/clk_control] [get_bd_pins axi_mm2s_mapper_0/aclk] [get_bd_pins clk_wiz_0/clk_in1] [get_bd_pins fft_top_2_0/clk_control] [get_bd_pins fft_top_2_0/m_axis_status_aclk] [get_bd_pins fft_top_2_0/s_axi_fft_aclk] [get_bd_pins galvo_top_0/s_axi_h_aclk] [get_bd_pins galvo_top_0/s_axi_v_aclk] [get_bd_pins input_top_2_0/clk_control] [get_bd_pins input_top_2_0/s_axi_adc0_aclk] [get_bd_pins mc_top_0/clk_control] [get_bd_pins memaxi_reset/slowest_sync_clk] [get_bd_pins peak_top_2_0/s_axi_idx_aclk] [get_bd_pins peak_top_2_0/s_axi_peak_aclk] [get_bd_pins pm_top_0/clk_control] [get_bd_pins pm_top_0/s_axi_pma_aclk] [get_bd_pins pm_top_0/s_axi_pmb_aclk] [get_bd_pins pm_top_1/clk_control] [get_bd_pins pm_top_1/s_axi_pma_aclk] [get_bd_pins pm_top_1/s_axi_pmb_aclk] [get_bd_pins pm_top_2/clk_control] [get_bd_pins pm_top_2/s_axi_pma_aclk] [get_bd_pins pm_top_2/s_axi_pmb_aclk] [get_bd_pins processing_system7_0/FCLK_CLK1] [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] [get_bd_pins regs_0/S_AXI_ACLK] [get_bd_pins spi_adc_pm_0/clk] [get_bd_pins window_top_2_0/s_axi_coef_aclk] [get_bd_pins xmux/ACLK] [get_bd_pins xmux/M00_ACLK] [get_bd_pins xmux/M01_ACLK] [get_bd_pins xmux/M02_ACLK] [get_bd_pins xmux/M03_ACLK] [get_bd_pins xmux/M04_ACLK] [get_bd_pins xmux/M05_ACLK] [get_bd_pins xmux/M06_ACLK] [get_bd_pins xmux/M07_ACLK] [get_bd_pins xmux/M08_ACLK] [get_bd_pins xmux/M09_ACLK] [get_bd_pins xmux/M10_ACLK] [get_bd_pins xmux/M11_ACLK] [get_bd_pins xmux/M12_ACLK] [get_bd_pins xmux/M13_ACLK] [get_bd_pins xmux/M14_ACLK] [get_bd_pins xmux/S00_ACLK]
+  connect_bd_net -net processing_system7_0_FCLK_CLK1 [get_bd_pins all_rstn_sync_0/clk_control] [get_bd_pins axi_mm2s_mapper_0/aclk] [get_bd_pins clk_wiz_0/clk_in1] [get_bd_pins fft_top_2_0/clk_control] [get_bd_pins fft_top_2_0/m_axis_status_aclk] [get_bd_pins fft_top_2_0/s_axi_fft_aclk] [get_bd_pins galvo_top_0/s_axi_h_aclk] [get_bd_pins galvo_top_0/s_axi_v_aclk] [get_bd_pins input_top_2_0/clk_control] [get_bd_pins input_top_2_0/s_axi_adc0_aclk] [get_bd_pins mc_top_0/clk_control] [get_bd_pins memaxi_reset/slowest_sync_clk] [get_bd_pins pm_top_0/clk_control] [get_bd_pins pm_top_0/s_axi_pma_aclk] [get_bd_pins pm_top_0/s_axi_pmb_aclk] [get_bd_pins pm_top_1/clk_control] [get_bd_pins pm_top_1/s_axi_pma_aclk] [get_bd_pins pm_top_1/s_axi_pmb_aclk] [get_bd_pins pm_top_2/clk_control] [get_bd_pins pm_top_2/s_axi_pma_aclk] [get_bd_pins pm_top_2/s_axi_pmb_aclk] [get_bd_pins processing_system7_0/FCLK_CLK1] [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] [get_bd_pins regs_0/S_AXI_ACLK] [get_bd_pins spi_adc_pm_0/clk] [get_bd_pins window_top_2_0/s_axi_coef_aclk] [get_bd_pins xmux/ACLK] [get_bd_pins xmux/M00_ACLK] [get_bd_pins xmux/M01_ACLK] [get_bd_pins xmux/M02_ACLK] [get_bd_pins xmux/M03_ACLK] [get_bd_pins xmux/M04_ACLK] [get_bd_pins xmux/M05_ACLK] [get_bd_pins xmux/M06_ACLK] [get_bd_pins xmux/M07_ACLK] [get_bd_pins xmux/M08_ACLK] [get_bd_pins xmux/M09_ACLK] [get_bd_pins xmux/M10_ACLK] [get_bd_pins xmux/M11_ACLK] [get_bd_pins xmux/M12_ACLK] [get_bd_pins xmux/M13_ACLK] [get_bd_pins xmux/M14_ACLK] [get_bd_pins xmux/S00_ACLK]
   connect_bd_net -net processing_system7_0_FCLK_CLK2 [get_bd_pins all_rstn_sync_0/clk10] [get_bd_pins mc_top_0/clk10] [get_bd_pins processing_system7_0/FCLK_CLK2] [get_bd_pins vga_0/clk_1M]
-  connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins memaxi_reset/ext_reset_in] [get_bd_pins processing_system7_0/FCLK_RESET0_N]
+  connect_bd_net -net processing_system7_0_FCLK_CLK3 [get_bd_pins peak_top_2_0/s_axi_aclk] [get_bd_pins processing_system7_0/FCLK_CLK3] [get_bd_pins processing_system7_0/M_AXI_GP1_ACLK] [get_bd_pins ps7_0_axi_periph/ACLK] [get_bd_pins ps7_0_axi_periph/M00_ACLK] [get_bd_pins ps7_0_axi_periph/S00_ACLK] [get_bd_pins rst_ps7_0_200M/slowest_sync_clk]
+  connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins memaxi_reset/ext_reset_in] [get_bd_pins processing_system7_0/FCLK_RESET0_N] [get_bd_pins rst_ps7_0_200M/ext_reset_in]
   connect_bd_net -net regs_0_out_reg0 [get_bd_pins mc_top_0/control] [get_bd_pins regs_0/out_reg0]
   connect_bd_net -net regs_0_out_reg1 [get_bd_pins pm_top_0/control_in] [get_bd_pins regs_0/out_reg1]
   connect_bd_net -net regs_0_out_reg2 [get_bd_pins pm_top_1/control_in] [get_bd_pins regs_0/out_reg2]
@@ -1767,8 +1776,9 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
   connect_bd_net -net regs_0_out_reg14 [get_bd_pins regs_0/out_reg14] [get_bd_pins vga_0/vga_in]
   connect_bd_net -net regs_0_out_reg15 [get_bd_pins regs_0/in_reg15] [get_bd_pins regs_0/out_reg15]
   connect_bd_net -net regs_0_out_reg16 [get_bd_pins mc_top_0/debug] [get_bd_pins regs_0/out_reg16]
-  connect_bd_net -net rst_ps7_0_100M_peripheral_aresetn [get_bd_pins all_rstn_sync_0/asyncrst_n] [get_bd_pins axi_mm2s_mapper_0/aresetn] [get_bd_pins fft_top_2_0/s_axi_fft_aresetn] [get_bd_pins galvo_top_0/s_axi_h_aresetn] [get_bd_pins galvo_top_0/s_axi_v_aresetn] [get_bd_pins input_top_2_0/s_axi_adc0_aresetn] [get_bd_pins memaxi_reset/peripheral_aresetn] [get_bd_pins peak_top_2_0/s_axi_idx_aresetn] [get_bd_pins peak_top_2_0/s_axi_peak_aresetn] [get_bd_pins pm_top_0/s_axi_pma_aresetn] [get_bd_pins pm_top_0/s_axi_pmb_aresetn] [get_bd_pins pm_top_1/s_axi_pma_aresetn] [get_bd_pins pm_top_1/s_axi_pmb_aresetn] [get_bd_pins pm_top_2/s_axi_pma_aresetn] [get_bd_pins pm_top_2/s_axi_pmb_aresetn] [get_bd_pins regs_0/S_AXI_ARESETN] [get_bd_pins window_top_2_0/s_axi_coef_aresetn] [get_bd_pins xmux/ARESETN] [get_bd_pins xmux/M00_ARESETN] [get_bd_pins xmux/M01_ARESETN] [get_bd_pins xmux/M02_ARESETN] [get_bd_pins xmux/M03_ARESETN] [get_bd_pins xmux/M04_ARESETN] [get_bd_pins xmux/M05_ARESETN] [get_bd_pins xmux/M06_ARESETN] [get_bd_pins xmux/M07_ARESETN] [get_bd_pins xmux/M08_ARESETN] [get_bd_pins xmux/M09_ARESETN] [get_bd_pins xmux/M10_ARESETN] [get_bd_pins xmux/M11_ARESETN] [get_bd_pins xmux/M12_ARESETN] [get_bd_pins xmux/M13_ARESETN] [get_bd_pins xmux/M14_ARESETN] [get_bd_pins xmux/S00_ARESETN]
+  connect_bd_net -net rst_ps7_0_100M_peripheral_aresetn [get_bd_pins all_rstn_sync_0/asyncrst_n] [get_bd_pins axi_mm2s_mapper_0/aresetn] [get_bd_pins fft_top_2_0/s_axi_fft_aresetn] [get_bd_pins galvo_top_0/s_axi_h_aresetn] [get_bd_pins galvo_top_0/s_axi_v_aresetn] [get_bd_pins input_top_2_0/s_axi_adc0_aresetn] [get_bd_pins memaxi_reset/peripheral_aresetn] [get_bd_pins pm_top_0/s_axi_pma_aresetn] [get_bd_pins pm_top_0/s_axi_pmb_aresetn] [get_bd_pins pm_top_1/s_axi_pma_aresetn] [get_bd_pins pm_top_1/s_axi_pmb_aresetn] [get_bd_pins pm_top_2/s_axi_pma_aresetn] [get_bd_pins pm_top_2/s_axi_pmb_aresetn] [get_bd_pins regs_0/S_AXI_ARESETN] [get_bd_pins window_top_2_0/s_axi_coef_aresetn] [get_bd_pins xmux/ARESETN] [get_bd_pins xmux/M00_ARESETN] [get_bd_pins xmux/M01_ARESETN] [get_bd_pins xmux/M02_ARESETN] [get_bd_pins xmux/M03_ARESETN] [get_bd_pins xmux/M04_ARESETN] [get_bd_pins xmux/M05_ARESETN] [get_bd_pins xmux/M06_ARESETN] [get_bd_pins xmux/M07_ARESETN] [get_bd_pins xmux/M08_ARESETN] [get_bd_pins xmux/M09_ARESETN] [get_bd_pins xmux/M10_ARESETN] [get_bd_pins xmux/M11_ARESETN] [get_bd_pins xmux/M12_ARESETN] [get_bd_pins xmux/M13_ARESETN] [get_bd_pins xmux/M14_ARESETN] [get_bd_pins xmux/S00_ARESETN]
   connect_bd_net -net rst_ps7_0_100M_peripheral_reset [get_bd_pins clk_wiz_0/reset] [get_bd_pins clk_wiz_1/reset] [get_bd_pins memaxi_reset/peripheral_reset] [get_bd_pins spi_adc_pm_0/reset]
+  connect_bd_net -net rst_ps7_0_200M_peripheral_aresetn [get_bd_pins peak_top_2_0/s_axi_aresetn] [get_bd_pins ps7_0_axi_periph/ARESETN] [get_bd_pins ps7_0_axi_periph/M00_ARESETN] [get_bd_pins ps7_0_axi_periph/S00_ARESETN] [get_bd_pins rst_ps7_0_200M/peripheral_aresetn]
   connect_bd_net -net selectio_wiz_0_clk_div_out [get_bd_pins adc_input/clk_div_out] [get_bd_pins all_rstn_sync_0/clk_adc] [get_bd_pins galvo_top_0/clk_adc] [get_bd_pins input_top_2_0/M_AXIS_ACLK] [get_bd_pins input_top_2_0/S_AXIS_ACLK] [get_bd_pins input_top_2_0/clk_adc] [get_bd_pins mc_top_0/clk_adc] [get_bd_pins window_top_2_0/M_AXIS_ACLK] [get_bd_pins window_top_2_0/S_AXIS_ACLK]
   connect_bd_net -net selectio_wiz_0_data_in_to_device [get_bd_pins adc_input/data_in_to_device] [get_bd_pins input_top_2_0/data_in_to_device]
   connect_bd_net -net selectio_wiz_2_data_out_to_pins_n [get_bd_ports pm0_out_n] [get_bd_pins selectio_pm0/data_out_to_pins_n]
@@ -1802,11 +1812,11 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
   connect_bd_net -net vga_0_step [get_bd_ports step] [get_bd_pins vga_0/step]
   connect_bd_net -net vga_0_up [get_bd_ports up] [get_bd_pins vga_0/up]
   connect_bd_net -net vga_0_vga_out [get_bd_pins regs_0/in_reg14] [get_bd_pins vga_0/vga_out]
+  connect_bd_net -net xlconcat_0_dout [get_bd_pins vga_0/dbgA] [get_bd_pins xlconcat_0/dout]
   connect_bd_net -net xlconstant_0_dout [get_bd_pins axi_mm2s_mapper_0/s_axis_tvalid] [get_bd_pins xlconstant_0/dout]
   connect_bd_net -net xlconstant_1_dout [get_bd_pins regs_0/in_reg1] [get_bd_pins regs_0/in_reg2] [get_bd_pins regs_0/in_reg3] [get_bd_pins xlconstant_1/dout]
-  connect_bd_net -net xlconstant_2_dout [get_bd_pins vga_0/dbgA0] [get_bd_pins vga_0/dbgA2] [get_bd_pins vga_0/dbgA6] [get_bd_pins vga_0/dbgA7] [get_bd_pins vga_0/dbgB4] [get_bd_pins vga_0/dbgB5] [get_bd_pins vga_0/dbgB6] [get_bd_pins vga_0/dbgB7] [get_bd_pins xlconstant_2/dout]
   connect_bd_net -net xlconstant_3_dout [get_bd_pins regs_0/in_reg4] [get_bd_pins regs_0/in_reg5] [get_bd_pins xlconstant_3/dout]
-  connect_bd_net -net xlslice_0_Dout [get_bd_pins vga_0/dbgA1] [get_bd_pins xlslice_0/Dout]
+  connect_bd_net -net xlslice_0_Dout [get_bd_pins xlconcat_0/In1] [get_bd_pins xlslice_0/Dout]
 
   # Create address segments
   assign_bd_address -offset 0x43F10000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs axi_mm2s_mapper_0/S_AXI/Reg] -force
@@ -1814,8 +1824,7 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
   assign_bd_address -offset 0x43C00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs galvo_top_0/s_axi_h/reg0] -force
   assign_bd_address -offset 0x43C10000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs galvo_top_0/s_axi_v/reg0] -force
   assign_bd_address -offset 0x43CB0000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs input_top_2_0/s_axi_adc0/reg0] -force
-  assign_bd_address -offset 0x43C90000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs peak_top_2_0/s_axi_idx/reg0] -force
-  assign_bd_address -offset 0x43CA0000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs peak_top_2_0/s_axi_peak/reg0] -force
+  assign_bd_address -offset 0x83C00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs peak_top_2_0/s_axi/reg0] -force
   assign_bd_address -offset 0x43C30000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs pm_top_0/s_axi_pmb/reg0] -force
   assign_bd_address -offset 0x43C20000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs pm_top_0/s_axi_pma/reg0] -force
   assign_bd_address -offset 0x43C50000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs pm_top_1/s_axi_pmb/reg0] -force
@@ -1829,6 +1838,7 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
   # Restore current instance
   current_bd_instance $oldCurInst
 
+  validate_bd_design
   save_bd_design
 }
 # End of create_root_design()
@@ -1840,6 +1850,4 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
 
 create_root_design ""
 
-
-common::send_gid_msg -ssname BD::TCL -id 2053 -severity "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 

@@ -58,49 +58,27 @@ module peak_top_2
 
     output peaks_ready,
 
-  input s_axi_peak_aclk     ,        // input wire s_axi_aclk
-  input s_axi_peak_aresetn  ,  // input wire s_axi_aresetn
-  input [13:0] s_axi_peak_awaddr   ,    // input wire [13 : 0] s_axi_awaddr
-  input [2:0] s_axi_peak_awprot   ,    // input wire [2 : 0] s_axi_awprot
-  input s_axi_peak_awvalid  ,  // input wire s_axi_awvalid
-  output s_axi_peak_awready  ,  // output wire s_axi_awready
-  input [31:0] s_axi_peak_wdata    ,      // input wire [31 : 0] s_axi_wdata
-  input [3:0] s_axi_peak_wstrb    ,      // input wire [3 : 0] s_axi_wstrb
-  input s_axi_peak_wvalid   ,    // input wire s_axi_wvalid
-  output s_axi_peak_wready   ,    // output wire s_axi_wready
-  output [1:0] s_axi_peak_bresp    ,      // output wire [1 : 0] s_axi_bresp
-  output s_axi_peak_bvalid   ,    // output wire s_axi_bvalid
-  input s_axi_peak_bready   ,    // input wire s_axi_bready
-  input [13:0] s_axi_peak_araddr   ,    // input wire [13 : 0] s_axi_araddr
-  input [2:0] s_axi_peak_arprot   ,    // input wire [2 : 0] s_axi_arprot
-  input s_axi_peak_arvalid  ,  // input wire s_axi_arvalid
-  output s_axi_peak_arready  ,  // output wire s_axi_arready
-  output [31:0] s_axi_peak_rdata    ,      // output wire [31 : 0] s_axi_rdata
-  output [1:0] s_axi_peak_rresp    ,      // output wire [1 : 0] s_axi_rresp
-  output s_axi_peak_rvalid   ,    // output wire s_axi_rvalid
-  input s_axi_peak_rready   ,    // input wire s_axi_rready
-
-  input s_axi_idx_aclk     ,        // input wire s_axi_aclk
-  input s_axi_idx_aresetn  ,  // input wire s_axi_aresetn
-  input [13:0] s_axi_idx_awaddr   ,    // input wire [13 : 0] s_axi_awaddr
-  input [2:0] s_axi_idx_awprot   ,    // input wire [2 : 0] s_axi_awprot
-  input s_axi_idx_awvalid  ,  // input wire s_axi_awvalid
-  output s_axi_idx_awready  ,  // output wire s_axi_awready
-  input [31:0] s_axi_idx_wdata    ,      // input wire [31 : 0] s_axi_wdata
-  input [3:0] s_axi_idx_wstrb    ,      // input wire [3 : 0] s_axi_wstrb
-  input s_axi_idx_wvalid   ,    // input wire s_axi_wvalid
-  output s_axi_idx_wready   ,    // output wire s_axi_wready
-  output [1:0] s_axi_idx_bresp    ,      // output wire [1 : 0] s_axi_bresp
-  output s_axi_idx_bvalid   ,    // output wire s_axi_bvalid
-  input s_axi_idx_bready   ,    // input wire s_axi_bready
-  input [13:0] s_axi_idx_araddr   ,    // input wire [13 : 0] s_axi_araddr
-  input [2:0] s_axi_idx_arprot   ,    // input wire [2 : 0] s_axi_arprot
-  input s_axi_idx_arvalid  ,  // input wire s_axi_arvalid
-  output s_axi_idx_arready  ,  // output wire s_axi_arready
-  output [31:0] s_axi_idx_rdata    ,      // output wire [31 : 0] s_axi_rdata
-  output [1:0] s_axi_idx_rresp    ,      // output wire [1 : 0] s_axi_rresp
-  output s_axi_idx_rvalid   ,    // output wire s_axi_rvalid
-  input s_axi_idx_rready       // input wire s_axi_rready
+  input s_axi_aclk     ,        // input wire s_axi_aclk
+  input s_axi_aresetn  ,  // input wire s_axi_aresetn
+  input [13:0] s_axi_awaddr   ,    // input wire [13 : 0] s_axi_awaddr
+  input [2:0] s_axi_awprot   ,    // input wire [2 : 0] s_axi_awprot
+  input s_axi_awvalid  ,  // input wire s_axi_awvalid
+  output s_axi_awready  ,  // output wire s_axi_awready
+  input [31:0] s_axi_wdata    ,      // input wire [31 : 0] s_axi_wdata
+  input [3:0] s_axi_wstrb    ,      // input wire [3 : 0] s_axi_wstrb
+  input s_axi_wvalid   ,    // input wire s_axi_wvalid
+  output s_axi_wready   ,    // output wire s_axi_wready
+  output [1:0] s_axi_bresp    ,      // output wire [1 : 0] s_axi_bresp
+  output s_axi_bvalid   ,    // output wire s_axi_bvalid
+  input s_axi_bready   ,    // input wire s_axi_bready
+  input [13:0] s_axi_araddr   ,    // input wire [13 : 0] s_axi_araddr
+  input [2:0] s_axi_arprot   ,    // input wire [2 : 0] s_axi_arprot
+  input s_axi_arvalid  ,  // input wire s_axi_arvalid
+  output s_axi_arready  ,  // output wire s_axi_arready
+  output [31:0] s_axi_rdata    ,      // output wire [31 : 0] s_axi_rdata
+  output [1:0] s_axi_rresp    ,      // output wire [1 : 0] s_axi_rresp
+  output s_axi_rvalid   ,    // output wire s_axi_rvalid
+  input s_axi_rready    // input wire s_axi_rready
         );
 
 
@@ -260,19 +238,15 @@ sync_many #
 /* have a big DPRAM for each of Peaks and Indices */
 /* clock in one by one at active last */
 
-wire        bram_peak_clk_a;
-wire        bram_peak_en_a;
-wire [3:0]  bram_peak_we_a;
-wire [13:0] bram_peak_addr_a ;
-wire [31:0] bram_peak_wrdata_a;
+wire        bram_clk_a;
+wire        bram_en_a;
+wire [3:0]  bram_we_a;
+wire [13:0] bram_addr_a ;
+wire [31:0] bram_wrdata_a;
+wire [31:0] bram_rddata_a;
+wire [31:0] bram_idx_rddata_a;
 wire [31:0] bram_peak_rddata_a;
 
-wire        bram_idx_clk_a;
-wire        bram_idx_en_a;
-wire [3:0]  bram_idx_we_a;
-wire [13:0] bram_idx_addr_a ;
-wire [31:0] bram_idx_wrdata_a;
-wire [31:0] bram_idx_rddata_a;
 
 wire [`VALUE_WIDTH-1:0] peak_to_write;
 reg  [`VALUE_WIDTH-1:0] peak_to_write_s;
@@ -281,35 +255,35 @@ reg  [`INDEX_WIDTH-1:0] index_to_write_s;
 
 // controller for memory for peaks
 bram_ctrl_2k bram_ctrl_peaks (
-  .s_axi_aclk    ( s_axi_peak_aclk    ) ,        // input wire s_axi_aclk
-  .s_axi_aresetn ( s_axi_peak_aresetn ) ,  // input wire s_axi_aresetn
-  .s_axi_awaddr  ( s_axi_peak_awaddr  ) ,    // input wire [13 : 0] s_axi_awaddr
-  .s_axi_awprot  ( s_axi_peak_awprot  ) ,    // input wire [2 : 0] s_axi_awprot
-  .s_axi_awvalid ( s_axi_peak_awvalid ) ,  // input wire s_axi_awvalid
-  .s_axi_awready ( s_axi_peak_awready ) ,  // output wire s_axi_awready
-  .s_axi_wdata   ( s_axi_peak_wdata   ) ,      // input wire [31 : 0] s_axi_wdata
-  .s_axi_wstrb   ( s_axi_peak_wstrb   ) ,      // input wire [3 : 0] s_axi_wstrb
-  .s_axi_wvalid  ( s_axi_peak_wvalid  ) ,    // input wire s_axi_wvalid
-  .s_axi_wready  ( s_axi_peak_wready  ) ,    // output wire s_axi_wready
-  .s_axi_bresp   ( s_axi_peak_bresp   ) ,      // output wire [1 : 0] s_axi_bresp
-  .s_axi_bvalid  ( s_axi_peak_bvalid  ) ,    // output wire s_axi_bvalid
-  .s_axi_bready  ( s_axi_peak_bready  ) ,    // input wire s_axi_bready
-  .s_axi_araddr  ( s_axi_peak_araddr  ) ,    // input wire [13 : 0] s_axi_araddr
-  .s_axi_arprot  ( s_axi_peak_arprot  ) ,    // input wire [2 : 0] s_axi_arprot
-  .s_axi_arvalid ( s_axi_peak_arvalid ) ,  // input wire s_axi_arvalid
-  .s_axi_arready ( s_axi_peak_arready ) ,  // output wire s_axi_arready
-  .s_axi_rdata   ( s_axi_peak_rdata   ) ,      // output wire [31 : 0] s_axi_rdata
-  .s_axi_rresp   ( s_axi_peak_rresp   ) ,      // output wire [1 : 0] s_axi_rresp
-  .s_axi_rvalid  ( s_axi_peak_rvalid  ) ,    // output wire s_axi_rvalid
-  .s_axi_rready  ( s_axi_peak_rready  ) ,    // input wire s_axi_rready
+  .s_axi_aclk    ( s_axi_aclk    ) ,        // input wire s_axi_aclk
+  .s_axi_aresetn ( s_axi_aresetn ) ,  // input wire s_axi_aresetn
+  .s_axi_awaddr  ( s_axi_awaddr  ) ,    // input wire [13 : 0] s_axi_awaddr
+  .s_axi_awprot  ( s_axi_awprot  ) ,    // input wire [2 : 0] s_axi_awprot
+  .s_axi_awvalid ( s_axi_awvalid ) ,  // input wire s_axi_awvalid
+  .s_axi_awready ( s_axi_awready ) ,  // output wire s_axi_awready
+  .s_axi_wdata   ( s_axi_wdata   ) ,      // input wire [31 : 0] s_axi_wdata
+  .s_axi_wstrb   ( s_axi_wstrb   ) ,      // input wire [3 : 0] s_axi_wstrb
+  .s_axi_wvalid  ( s_axi_wvalid  ) ,    // input wire s_axi_wvalid
+  .s_axi_wready  ( s_axi_wready  ) ,    // output wire s_axi_wready
+  .s_axi_bresp   ( s_axi_bresp   ) ,      // output wire [1 : 0] s_axi_bresp
+  .s_axi_bvalid  ( s_axi_bvalid  ) ,    // output wire s_axi_bvalid
+  .s_axi_bready  ( s_axi_bready  ) ,    // input wire s_axi_bready
+  .s_axi_araddr  ( s_axi_araddr  ) ,    // input wire [13 : 0] s_axi_araddr
+  .s_axi_arprot  ( s_axi_arprot  ) ,    // input wire [2 : 0] s_axi_arprot
+  .s_axi_arvalid ( s_axi_arvalid ) ,  // input wire s_axi_arvalid
+  .s_axi_arready ( s_axi_arready ) ,  // output wire s_axi_arready
+  .s_axi_rdata   ( s_axi_rdata   ) ,      // output wire [31 : 0] s_axi_rdata
+  .s_axi_rresp   ( s_axi_rresp   ) ,      // output wire [1 : 0] s_axi_rresp
+  .s_axi_rvalid  ( s_axi_rvalid  ) ,    // output wire s_axi_rvalid
+  .s_axi_rready  ( s_axi_rready  ) ,    // input wire s_axi_rready
 
   .bram_rst_a    ( ) ,        // output wire bram_rst_a
-  .bram_clk_a    ( bram_peak_clk_a    ) ,        // output wire bram_clk_a
-  .bram_en_a     ( bram_peak_en_a     ) ,          // output wire bram_en_a
-  .bram_we_a     ( bram_peak_we_a     ) ,          // output wire [3 : 0] bram_we_a
-  .bram_addr_a   ( bram_peak_addr_a   ) ,      // output wire [13 : 0] bram_addr_a
-  .bram_wrdata_a ( bram_peak_wrdata_a ) ,  // output wire [31 : 0] bram_wrdata_a
-  .bram_rddata_a ( bram_peak_rddata_a )  // input wire [31 : 0] bram_rddata_a
+  .bram_clk_a    ( bram_clk_a    ) ,        // output wire bram_clk_a
+  .bram_en_a     ( bram_en_a     ) ,          // output wire bram_en_a
+  .bram_we_a     ( bram_we_a     ) ,          // output wire [3 : 0] bram_we_a
+  .bram_addr_a   ( bram_addr_a   ) ,      // output wire [13 : 0] bram_addr_a
+  .bram_wrdata_a ( bram_wrdata_a ) ,  // output wire [31 : 0] bram_wrdata_a
+  .bram_rddata_a ( bram_rddata_a )  // input wire [31 : 0] bram_rddata_a
 );
 
 dpram_128x32 dpram_peaks (
@@ -322,46 +296,13 @@ dpram_128x32 dpram_peaks (
   .douta                (             ) ,  // output wire [9 : 0] douta
 
     /* to AXI */
-  .clkb  ( bram_peak_clk_a         ) ,    // input wire clkb
-  .enb   ( bram_peak_en_a          ) ,      // input wire enb
-  .web   ( bram_peak_we_a[0]       ) ,      // input wire [0 : 0] web
-  .addrb ( bram_peak_addr_a[8:2]  ) ,  // input wire [9 : 0] addrb
-  .dinb  ( bram_peak_wrdata_a ) ,    // input wire [9 : 0] dinb
+  .clkb  ( bram_clk_a         ) ,    // input wire clkb
+  .enb   ( !bram_addr_a[9]   ),
+  .web   ( bram_we_a[0]       ) ,      // input wire [0 : 0] web
+  .addrb ( bram_addr_a[8:2]  ) ,  // input wire [9 : 0] addrb
+  .dinb  ( bram_wrdata_a ) ,    // input wire [9 : 0] dinb
   .doutb ( bram_peak_rddata_a ) // output wire [31 : 0] doutb
                               ) ;
-
-// controller for memory for indices
-bram_ctrl_2k bram_ctrl_indices (
-  .s_axi_aclk    ( s_axi_idx_aclk    ) ,        // input wire s_axi_aclk
-  .s_axi_aresetn ( s_axi_idx_aresetn ) ,  // input wire s_axi_aresetn
-  .s_axi_awaddr  ( s_axi_idx_awaddr  ) ,    // input wire [13 : 0] s_axi_awaddr
-  .s_axi_awprot  ( s_axi_idx_awprot  ) ,    // input wire [2 : 0] s_axi_awprot
-  .s_axi_awvalid ( s_axi_idx_awvalid ) ,  // input wire s_axi_awvalid
-  .s_axi_awready ( s_axi_idx_awready ) ,  // output wire s_axi_awready
-  .s_axi_wdata   ( s_axi_idx_wdata   ) ,      // input wire [31 : 0] s_axi_wdata
-  .s_axi_wstrb   ( s_axi_idx_wstrb   ) ,      // input wire [3 : 0] s_axi_wstrb
-  .s_axi_wvalid  ( s_axi_idx_wvalid  ) ,    // input wire s_axi_wvalid
-  .s_axi_wready  ( s_axi_idx_wready  ) ,    // output wire s_axi_wready
-  .s_axi_bresp   ( s_axi_idx_bresp   ) ,      // output wire [1 : 0] s_axi_bresp
-  .s_axi_bvalid  ( s_axi_idx_bvalid  ) ,    // output wire s_axi_bvalid
-  .s_axi_bready  ( s_axi_idx_bready  ) ,    // input wire s_axi_bready
-  .s_axi_araddr  ( s_axi_idx_araddr  ) ,    // input wire [13 : 0] s_axi_araddr
-  .s_axi_arprot  ( s_axi_idx_arprot  ) ,    // input wire [2 : 0] s_axi_arprot
-  .s_axi_arvalid ( s_axi_idx_arvalid ) ,  // input wire s_axi_arvalid
-  .s_axi_arready ( s_axi_idx_arready ) ,  // output wire s_axi_arready
-  .s_axi_rdata   ( s_axi_idx_rdata   ) ,      // output wire [31 : 0] s_axi_rdata
-  .s_axi_rresp   ( s_axi_idx_rresp   ) ,      // output wire [1 : 0] s_axi_rresp
-  .s_axi_rvalid  ( s_axi_idx_rvalid  ) ,    // output wire s_axi_rvalid
-  .s_axi_rready  ( s_axi_idx_rready  ) ,    // input wire s_axi_rready
-
-  .bram_rst_a    ( ) ,        // output wire bram_rst_a
-  .bram_clk_a    ( bram_idx_clk_a    ) ,        // output wire bram_clk_a
-  .bram_en_a     ( bram_idx_en_a     ) ,          // output wire bram_en_a
-  .bram_we_a     ( bram_idx_we_a     ) ,          // output wire [3 : 0] bram_we_a
-  .bram_addr_a   ( bram_idx_addr_a   ) ,      // output wire [13 : 0] bram_addr_a
-  .bram_wrdata_a ( bram_idx_wrdata_a ) ,  // output wire [31 : 0] bram_wrdata_a
-  .bram_rddata_a ( bram_idx_rddata_a )  // input wire [31 : 0] bram_rddata_a
-);
 
 dpram_128x32 dpram_indices (
     /* from peak detect */
@@ -373,13 +314,14 @@ dpram_128x32 dpram_indices (
   .douta                (                 ),
 
     /* to AXI */
-  .clkb  ( bram_idx_clk_a       ),
-  .enb   ( bram_idx_en_a        ),
-  .web   ( bram_idx_we_a[0]     ),
-  .addrb ( bram_idx_addr_a[8:2] ),
-  .dinb  ( bram_idx_wrdata_a    ),
+  .clkb  ( bram_clk_a       ),
+  .enb   ( bram_addr_a[9]   ),
+  .web   ( bram_we_a[0]     ),
+  .addrb ( bram_addr_a[8:2] ),
+  .dinb  ( bram_wrdata_a    ),
   .doutb ( bram_idx_rddata_a    )
                                 );
+assign bram_rddata_a = bram_addr_a[9] ? bram_idx_rddata_a : bram_peak_rddata_a;
 
 /* Mux and register (for timing) the peaks */
 assign peak_to_write =  peaks[addr_wr * `VALUE_WIDTH +: `VALUE_WIDTH];
