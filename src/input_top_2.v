@@ -30,6 +30,7 @@ output dbg_rst_fifo,
 /* output dbg_disable_fiford_s , */
 output dbg_empty,
 output dbg_in_capture,
+output [2:0] dbg_mux_o,
 output dbg_debug_go,
 output dbg_in_pixel,
     // from & to mc
@@ -132,6 +133,7 @@ output dbg_in_pixel,
 
     );
     assign dbg_wr_en = S_AXIS_TVALID;
+    assign dbg_mux_o = dbg_mux_l;
 
 wire [`CHANNELS*16 - 1 : 0] fifo_data_out;
 wire [`CHANNELS-1:0] process_clks;

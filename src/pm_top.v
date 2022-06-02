@@ -8,10 +8,19 @@
 module pm_top
 (
     input fast_c, // divided down by 1 and 2 
+
     input clk_control,
     input rst_control_n,
+
+    input clk_adc,
+    input rst_adc_n,
     output [19:0] data_out_from_device   , // output [9:0] data_out_to_pins_p
     input [31:0] control_in,
+
+    output [31:0] status,
+
+    input sync_awg, // from clk_adc domain
+    output dbg_sync_s,
 
     /* debug signals */
     /* output [9:0] addra_debug, */
@@ -87,65 +96,52 @@ wire [11:0] bram_rddata_b;
  /* reg [9:0] pm_data_a_d; */
  /* reg [9:0] pm_data_b_d; */
 
- wire [10:0] addra_max, addrb_max;
- wire sync;
+ reg [10:0] addra_max;
+ wire synca_en;
+ wire synca_en_s;
+ wire addra_en;
+
+ reg [10:0] addrb_max;
+ wire syncb_en;
+ wire syncb_en_s;
+ wire addrb_en;
+
  wire clk_div2;
 
  wire clk_en;
  assign clk_en = 1'b1;
 
- /* for debug */
- /* assign addra_debug = addra; */
- /* assign addrb_debug = addrb; */
+/* assign   addra_max = control_in[10:0]; */
+assign   synca_en  = control_in[14];
+assign   addra_en  = control_in[15];
 
- /* always @ (posedge fast_c) */
- /*     clk_en <= !clk_en; */
+/* assign   addrb_max = control_in[26:16]; */
+assign   syncb_en  = control_in[30];
+assign   addrb_en  = control_in[31];
 
-/* BUFR #( */
-/*       .BUFR_DIVIDE("1"),   // Values: "BYPASS, 1, 2, 3, 4, 5, 6, 7, 8" */ 
-/*       .SIM_DEVICE("7SERIES")  // Must be set to "7SERIES" */ 
-/*    ) */
-/*    BUFR_fast ( */
-/*       .O(clk_fast),     // 1-bit output: Clock output port */
-/*       .CE(1'b1),   // 1-bit input: Active high, clock enable (Divided modes only) */
-/*       .CLR(1'b0), // 1-bit input: Active high, asynchronous clear (Divided modes only) */
-/*       .I(fast_c)      // 1-bit input: Clock buffer input driven by an IBUF, MMCM or local interconnect */
-/*    ); */
+always @ (posedge clk_control)
+    if (addra_en)
+        addra_max <= control_in[10:0];
 
-/*    BUFR #( */
-/*       .BUFR_DIVIDE("2"),   // Values: "BYPASS, 1, 2, 3, 4, 5, 6, 7, 8" */ 
-/*       .SIM_DEVICE("7SERIES")  // Must be set to "7SERIES" */ 
-/*    ) */
-/*    BUFR_slow ( */
-/*       .O(clk_div2),     // 1-bit output: Clock output port */
-/*       .CE(1'b1),   // 1-bit input: Active high, clock enable (Divided modes only) */
-/*       .CLR(1'b0), // 1-bit input: Active high, asynchronous clear (Divided modes only) */
-/*       .I(fast_c)      // 1-bit input: Clock buffer input driven by an IBUF, MMCM or local interconnect */
-/*    ); */
+always @ (posedge clk_control)
+    if (addrb_en)
+        addrb_max <= control_in[26:16];
 
-
- /* TODO must change this to two separate inputs */
-assign   addra_max = control_in[10:0];
-assign   addrb_max = control_in[26:16];
-assign sync = control_in[31];
-
-// synchronize some signals such as:
-// sync, addra_max, addrb_max
-// only for timing constraints - not really synchronized
-
-reg sync_d;
-wire sync_r;
 wire sync_s;
 wire [10:0] addra_max_s, addrb_max_s;
 wire reset_s;
-reg synca;
-reg syncb;
 
-always @ (posedge clk_control)
-    sync_d <= sync;
-
-assign sync_r = (sync && !sync_d);
-
+wire [31:0] status_pre_s;
+assign status_pre_s = {
+    addrb_en,
+    syncb_en,
+    3'h0,
+    addrb_max,
+    addra_en,
+    synca_en,
+    3'h0,
+    addra_max
+    };
 
    xpm_cdc_pulse #(
       .DEST_SYNC_FF(2),   // DECIMAL; range: 2-10
@@ -155,25 +151,34 @@ assign sync_r = (sync && !sync_d);
       .SIM_ASSERT_CHK(0)  // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
    )
    xpm_cdc_pulse_sync (
-      .dest_pulse(sync_s), // 1-bit output: Outputs a pulse the size of one dest_clk period when a pulse
-                               // transfer is correctly initiated on src_pulse input. This output is
-                               // combinatorial unless REG_OUTPUT is set to 1.
-
+      .dest_pulse(sync_s),
       .dest_clk(fast_c),     // 1-bit input: Destination clock.
-      .dest_rst(reset_s),     // 1-bit input: optional; required when RST_USED = 1
-      .src_clk(clk_control),       // 1-bit input: Source clock.
-      .src_pulse(sync_r),   // 1-bit input: Rising edge of this signal initiates a pulse transfer to the
-                               // destination clock domain. The minimum gap between each pulse transfer must be
-                               // at the minimum 2*(larger(src_clk period, dest_clk period)). This is measured
-                               // between the falling edge of a src_pulse to the rising edge of the next
-                               // src_pulse. This minimum gap will guarantee that each rising edge of src_pulse
-                               // will generate a pulse the size of one dest_clk period in the destination
-                               // clock domain. When RST_USED = 1, pulse transfers will not be guaranteed while
-                               // src_rst and/or dest_rst are asserted.
-
-      .src_rst(!rst_control_n)        // 1-bit input: optional; required when RST_USED = 1
+      .dest_rst(reset_s),
+      //
+      .src_clk(clk_adc),       // 1-bit input: Source clock.
+      .src_pulse(sync_awg),
+      .src_rst(!rst_adc_n)
    );
 
+   assign dbg_sync_s = sync_s;
+
+
+/* change clock domains */
+my_sync sync_status (
+    .clk (clk_control),
+    .in  (status_pre_s),
+    .out (status)
+);
+my_sync sync_synca (
+    .clk (fast_c),
+    .in  (synca_en),
+    .out (synca_en_s)
+);
+my_sync sync_syncb (
+    .clk (fast_c),
+    .in  (syncb_en),
+    .out (syncb_en_s)
+);
 
 my_sync sync_reset (
     .clk (fast_c),
@@ -315,76 +320,14 @@ always @ (posedge fast_c)
 
 assign data_out_from_device = data_out_from_device_d;
 
-// generate read address into dpram to get coefficient
-//
- /* COUNTER_LOAD_MACRO #( */
- /*      .COUNT_BY(48'h000000000001), // Count by value */
- /*      .DEVICE("7SERIES"), // Target Device: "7SERIES" */ 
- /*      .WIDTH_DATA(10)     // Counter output bus width, 1-48 */
- /*   ) COUNTER_addra_inst ( */
- /*      .Q(addra),                 // Counter output, width determined by WIDTH_DATA parameter */
- /*      .CLK(fast_c),             // 1-bit clock input */
- /*      .CE(clk_en),               // 1-bit clock enable input */
- /*      .DIRECTION(1'b0), // 1-bit up/down count direction input, high is count up */
- /*      .LOAD(synca),           // 1-bit active high load input */
- /*      .LOAD_DATA(addra_max_s), // Counter load data, width determined by WIDTH_DATA parameter */
- /*      .RST(reset_s)              // 1-bit active high synchronous reset */
- /*   ); */
-
- /*   COUNTER_TC_MACRO #( */
- /*      .COUNT_BY(48'h000000000001), // Count by value */
- /*      .DEVICE("7SERIES"),          // Target Device: "7SERIES" */ 
- /*      .DIRECTION("UP"),            // Counter direction, "UP" or "DOWN" */ 
- /*      .RESET_UPON_TC("TRUE"), // Reset counter upon terminal count, "TRUE" or "FALSE" */ 
- /*      .TC_VALUE({38'h0, addrb_max_s} ), // Terminal count value */
- /*      .WIDTH_DATA(10)              // Counter output bus width, 1-48 */
- /*   ) COUNTER_TC_MACRO_addrb ( */
- /*      .Q(addrb),     // Counter output bus, width determined by WIDTH_DATA parameter */
- /*      .TC(),   // 1-bit terminal count output, high = terminal count is reached */
- /*      .CLK(fast_c), // 1-bit positive edge clock input */
- /*      .CE(1'b1),   // 1-bit active high clock enable input */
- /*      .RST(reset_s)  // 1-bit active high synchronous reset */
- /*   ); */
-
-
- /* COUNTER_LOAD_MACRO #( */
- /*      .COUNT_BY(48'h000000000001), // Count by value */
- /*      .DEVICE("7SERIES"), // Target Device: "7SERIES" */ 
- /*      .WIDTH_DATA(10)     // Counter output bus width, 1-48 */
- /*   ) COUNTER_addrb_inst ( */
- /*      .Q(addrb),                 // Counter output, width determined by WIDTH_DATA parameter */
- /*      .CLK(fast_c),             // 1-bit clock input */
- /*      .CE(clk_en),               // 1-bit clock enable input */
- /*      .DIRECTION(1'b0), // 1-bit up/down count direction input, high is count up */
- /*      .LOAD(syncb),           // 1-bit active high load input */
- /*      .LOAD_DATA(addrb_max_s), // Counter load data, width determined by WIDTH_DATA parameter */
- /*      .RST(reset_s)              // 1-bit active high synchronous reset */
- /*   ); */
-
-/* always @ (posedge fast_c) */
-/*     if (clk_en) */
-/*         if (addra == 2) */
-/*             synca <= 1'b1; */
-/*         else */
-/*             synca <= 1'b0; */
-
-/* always @ (posedge fast_c) */
-/*     if (clk_en) */
-/*         if (addrb == 2) */
-/*             syncb <= 1'b1; */
-/*         else */
-/*             syncb <= 1'b0; */
-//
-//
-//
 always @(posedge fast_c)
-    if (addra == addra_max_s || sync_s || reset_s)
+    if (addra == addra_max_s || (sync_s && synca_en_s) || reset_s)
         addra <= 0;
     else
         addra <= addra + 1;
 
 always @(posedge fast_c)
-    if (addrb == addrb_max_s || sync_s || reset_s)
+    if (addrb == addrb_max_s || (sync_s && syncb_en_s) || reset_s)
         addrb <= 0;
     else
         addrb <= addrb + 1;

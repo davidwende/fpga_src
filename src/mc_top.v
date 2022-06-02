@@ -63,6 +63,7 @@ module mc_top
     output [7:0] dbg_count,
 
     output reg last,
+    output sync_awg,
     output reg galvo_go
     );
 
@@ -121,10 +122,8 @@ wire force_nowindow_set;
 wire select_average_clr;
 wire select_average_set;
 
-wire [11:0] cycle_time;
-reg  [11:0] cycle_time_h;
-wire [11:0] cycle_time_s;
 reg  [11:0] count;
+reg last_toggle;
 
 wire [10:0] galvov_s;
 wire [10:0] galvoh_s;
@@ -137,8 +136,6 @@ reg tc;
 wire running_s;
 wire run;
 wire halt;
-wire cycle_time_v;
-wire [11:0] cycle_time;
 wire [15:0] version;
 
 assign version = {`MAJ_VERSION, `MIN_VERSION};
@@ -146,8 +143,6 @@ assign version = {`MAJ_VERSION, `MIN_VERSION};
 assign run                = control[31];
 assign halt               = control[30];
 assign rst_peak_ready     = control[29];
-assign cycle_time_v       = control[15];
-assign cycle_time         = control[11:0];
 
 always @ (posedge clk_control)
     if (!rst_control_n)
@@ -256,7 +251,6 @@ always @(posedge clk_adc)
         count <= 0;
     else
         if (count == `PIXEL_SIZE-1 )
-        /* if (count == cycle_time_s ) */
             count <= 0;
     else
         count <= count + 1;
@@ -277,24 +271,31 @@ always @(posedge clk_adc)
 
 always @(posedge clk_adc)
     last <= (count == `PIXEL_SIZE -1 );
+
+/* the galvo_go signal triggers horizontal increment in galvo */
 always @(posedge clk_adc)
-    galvo_go = (count == `PIXEL_SIZE - 10);
+    galvo_go = (count == `PIXEL_SIZE-1 || count == (`PIXEL_SIZE/2)-1);
+
+/* sync the AWG on every two pixels */
+always @(posedge clk_adc)
+    if (!rst_adc_n)
+        last_toggle <= 0;
+    else if (last)
+        last_toggle <= !last_toggle;
+
+edge_detect #(
+    .TYPE ( 1 )
+)
+last_rising (
+    .o (sync_awg),
+    .clk (clk_adc),
+    .i (last_toggle)
+);
+
+/* assign sync_awg = last; */
 
 assign dbg_count = count[7:0];
 
-always @ (clk_control)
-    if (cycle_time_v)
-        cycle_time_h <= cycle_time;
-
-sync_many #
-	(
-		.WIDTH(12)
-	) sync_cycletime
-	(
-        .clks ({12{clk_adc}}),
-        .ins  (cycle_time_h),
-        .outs (cycle_time_s)
-	);
 sync_many #
 	(
 		.WIDTH(1)

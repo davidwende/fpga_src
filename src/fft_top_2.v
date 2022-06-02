@@ -132,6 +132,9 @@ module fft_top_2  (
     input clk_control,
     input rst_control_n,
 
+    output dbg_fft_capture_wren,
+    output dbg_in_capture,
+
     input         s_axi_fft_aclk    ,        // input wire s_axi_aclk
     input         s_axi_fft_aresetn ,  // input wire s_axi_aresetn
     input [12:0]  s_axi_fft_awaddr  ,    // input wire [13 : 0] s_axi_awaddr
@@ -550,6 +553,8 @@ dpram_2kx12 debug_dpram (
                               ) ;
 
 assign fft_capture_wren = (in_capture && m_axis_data0_tvalid);
+assign dbg_fft_capture_wren = fft_capture_wren;
+assign dbg_in_capture = in_capture;
 
 endmodule
 
