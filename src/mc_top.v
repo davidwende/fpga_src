@@ -175,7 +175,8 @@ assign debug_status = {
 wire fft_capture_l;
 reg fft_capture_d;
 wire [2:0] dbg_mux_i;
-
+assign select_average_clr = debug[19];
+assign select_average_set = debug[18];
 assign force_nowindow_clr = debug[17];
 assign force_nowindow_set = debug[16];
 assign dbg_mux_i          = debug[14:12];

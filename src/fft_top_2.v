@@ -536,7 +536,7 @@ bram_ctrl_2k bram_ctrl_capture (
   .bram_rddata_a ( bram_rddata_a )
 );
 
-dpram_2kx12 debug_dpram (
+dpram_2kx32 debug_dpram (
   .clka                 ( process_clks[0] ) ,    // input wire clka
   .ena                  ( 1'b1     ) ,      // input wire ena
   .wea                  ( fft_capture_wren     ) ,      // input wire [0 : 0] wea

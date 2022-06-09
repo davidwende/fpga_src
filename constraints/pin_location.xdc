@@ -373,6 +373,8 @@ set_property IOSTANDARD LVCMOS25 [get_ports {step[1]}]
 set_property IOSTANDARD LVCMOS25 [get_ports {debug[0]}]
 set_property IOSTANDARD LVCMOS25 [get_ports {debug[1]}]
 
+set_property PULLUP true [get_ports {debug[0]}]
+set_property PULLUP true [get_ports {debug[1]}]
 
 # Reset to ADC
 set_property PACKAGE_PIN J1 [get_ports rstn_adc]

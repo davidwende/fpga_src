@@ -23,38 +23,34 @@ module input_top_2  (
     input         M_AXIS_TREADY,
 
     output dbg_wr_en,
-output dbg_last,
-output dbg_rd_en,
-output dbg_full,
-output dbg_rst_fifo,
-/* output dbg_disable_fiford_s , */
-output dbg_empty,
-output dbg_in_capture,
-output [2:0] dbg_mux_o,
-output dbg_debug_go,
-output dbg_in_pixel,
-    // from & to mc
+    output dbg_last,
+    output dbg_rd_en,
+    output dbg_full,
+    output dbg_rst_fifo,
+    output dbg_empty,
+    output dbg_in_capture,
+    output [2:0] dbg_mux_o,
+    output dbg_debug_go,
+    output dbg_in_pixel,
     input clk_control,
     input clk_stream,
     input reset_fifo,
-     input rst_stream_n,
-     input rst_control_n,
-     input rst_adc_n,
-     /* input disable_fifowr, */
-     /* input [`CHANNELS-1:0] disable_fiford, */
+    input rst_stream_n,
+    input rst_control_n,
+    input rst_adc_n,
 
-     output reg [9:0] debug_data,
+    output reg [9:0] debug_data,
     // From ADC
     input [89:0]  data_in_to_device,
-        input        clk_adc           ,
-        output [8:0] bitslips,
+    input        clk_adc           ,
+    output [8:0] bitslips,
 
-        output debug_capture,
+    output debug_capture,
 
     // control
     input lreset_n,
-        input last,
-        input sampling,
+    input last,
+    input sampling,
 
     input debug_go,
     input [2:0] dbg_mux,
@@ -130,10 +126,9 @@ output dbg_in_pixel,
     output wire m_axis_data7_tvalid,
     input wire m_axis_data7_tready,
     output wire m_axis_data7_tlast
+);
 
-    );
-    assign dbg_wr_en = S_AXIS_TVALID;
-    assign dbg_mux_o = dbg_mux_l;
+wire [2:0] dbg_mux_l;
 
 wire [`CHANNELS*16 - 1 : 0] fifo_data_out;
 wire [`CHANNELS-1:0] process_clks;
@@ -152,24 +147,27 @@ wire [`CHANNELS-1:0] tlast;
 wire lresetn_adc;
 reg [10:0] debug_addr;
 reg in_capture;
+reg debug_trig;
 wire debug_go_s;
 reg running;
 
 /* pipeline registers for debug capture */
-wire [2:0] dbg_mux_l;
-reg [9:0] capture;
+reg [15:0] capture;
 
 wire        bram0_clk_a;
 wire        bram0_en_a;
 wire [3:0]  bram0_we_a;
 wire [31:0] bram0_wrdata_a;
-wire [11:0] bram0_rddata_a;
+wire [15:0] bram0_rddata_a;
 wire [12:0] bram0_addr_a;
 
 wire lreset_n_adc;
 
 /* wire [`CHANNELS-1:0] disable_fiford_s; */
 
+
+assign dbg_wr_en = S_AXIS_TVALID;
+assign dbg_mux_o = dbg_mux_l;
 /* make vector of clocks */
 assign process_clks = {
     m_axis_data7_aclk,
@@ -381,12 +379,12 @@ bram_ctrl_2k bram_ctrl_capture0 (
   .bram_rddata_a ( {20'h0, bram0_rddata_a })  // input wire [31 : 0] bram_rddata_a
 );
 
-dpram_2kx12 debug_dpram_ch0 (
+dpram_2kx16 debug_dpram_ch0 (
   .clka                 ( clk_adc ) ,    // input wire clka
   .ena                  ( 1'b1     ) ,      // input wire ena
   .wea                  ( in_capture     ) ,      // input wire [0 : 0] wea
   .addra                ( debug_addr   ) ,  // input wire [9 : 0] addra
-  .dina                 ( {2'b0,capture}  ) ,    // input wire [9 : 0] dina
+  .dina                 ( capture  ) ,    // input wire [9 : 0] dina
   /* .dina                 ( {2'b0,re_order[19:10]}  ) ,    // input wire [9 : 0] dina */
   .douta                (             ) ,  // output wire [9 : 0] douta
 
@@ -394,13 +392,15 @@ dpram_2kx12 debug_dpram_ch0 (
   .enb   ( bram0_en_a          ) ,      // input wire enb
   .web   ( bram0_we_a[0]       ) ,      // input wire [0 : 0] web
   .addrb ( bram0_addr_a[12:2]  ) ,  // input wire [9 : 0] addrb
-  .dinb  ( bram0_wrdata_a[11:0] ) ,    // input wire [9 : 0] dinb
+  .dinb  ( bram0_wrdata_a[15:0] ) ,    // input wire [9 : 0] dinb
   .doutb ( bram0_rddata_a      ) // output wire [15 : 0] doutb
                               ) ;
 
 
 // control the debug capture process
 // first sync debug_go to adc domain
+//
+// debug_go -> debug_go_s -> debug_trig -> in_capture
 
    xpm_cdc_pulse #(
       .DEST_SYNC_FF(2),   // DECIMAL; range: 2-10
@@ -429,10 +429,22 @@ dpram_2kx12 debug_dpram_ch0 (
       .src_rst(!rst_control_n)        // 1-bit input: optional; required when RST_USED = 1
    );
 
+/* in_capture activates when trig and on last */
+always @ (posedge clk_adc)
+    if (!rst_adc_n)
+        debug_trig <= 1'b0;
+    else if ( debug_go_s )
+        debug_trig <= 1'b1;
+    else if (&debug_addr)
+        debug_trig <= 1'b0;
+
 always @ (posedge clk_adc)
     if (!rst_adc_n)
         in_capture <= 1'b0;
-    else if (debug_go_s)
+    /* else if (debug_go_s) */
+    else if (debug_trig && S_AXIS_TVALID && S_AXIS_TLAST && dbg_mux_l == 1 )
+        in_capture <= 1'b1;
+    else if (debug_trig && M_AXIS_TVALID && M_AXIS_TLAST && dbg_mux_l != 1 )
         in_capture <= 1'b1;
     else if (&debug_addr)
         in_capture <= 1'b0;
@@ -471,25 +483,27 @@ assign debug_capture = debug_go_s;
 
    );
 
+            /* .din    ( {S_AXIS_TLAST, S_AXIS_TDATA[h*16 +: 16]}    ) , */
 /* now mux the debug signals into regs */
 always @(posedge clk_adc)
 begin
     if      (dbg_mux_l == 0)
-        capture <= re_order[9:0];
+        capture <= {6'h0, re_order[9:0]};
     else if (dbg_mux_l == 1)
-        capture <= re_order[19:10];
+        /* capture <= {4'h0, re_order[19:10]}; */
+        capture <= S_AXIS_TDATA[15:0];
     else if (dbg_mux_l == 2)
-        capture <= re_order[29:20];
+        capture <= {6'h0, re_order[29:20]};
     else if (dbg_mux_l == 3)
-        capture <= re_order[39:30];
+        capture <= {6'h0, re_order[39:30]};
     else if (dbg_mux_l == 4)
-        capture <= re_order[49:40];
+        capture <= {6'h0, re_order[49:40]};
     else if (dbg_mux_l == 5)
-        capture <= re_order[59:50];
+        capture <= {6'h0, re_order[59:50]};
     else if (dbg_mux_l == 6)
-        capture <= re_order[69:60];
+        capture <= {6'h0, re_order[69:60]};
     else
-        capture <= re_order[79:70];
+        capture <= {6'h0, re_order[79:70]};
 end
 
 /* Collect 8 `channels of data for passing through Window function */

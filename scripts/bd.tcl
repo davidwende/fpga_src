@@ -1650,6 +1650,15 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
    CONFIG.DOUT_WIDTH {1} \
  ] $xlslice_3
 
+  # Create instance: xlslice_4, and set properties
+  set xlslice_4 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice xlslice_4 ]
+  set_property -dict [ list \
+   CONFIG.DIN_FROM {7} \
+   CONFIG.DIN_TO {0} \
+   CONFIG.DIN_WIDTH {10} \
+   CONFIG.DOUT_WIDTH {8} \
+ ] $xlslice_4
+
   # Create instance: xmux, and set properties
   set xmux [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect xmux ]
   set_property -dict [ list \
@@ -1740,7 +1749,7 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
   connect_bd_net -net input_top_0_bitslips [get_bd_pins adc_input/bitslip] [get_bd_pins input_top_2_0/bitslips] [get_bd_pins mc_top_0/bitslips] [get_bd_pins xlslice_0/Din]
   connect_bd_net -net input_top_2_0_dbg_mux_o [get_bd_pins input_top_2_0/dbg_mux_o] [get_bd_pins xlslice_1/Din] [get_bd_pins xlslice_2/Din] [get_bd_pins xlslice_3/Din]
   connect_bd_net -net input_top_2_0_dbg_wr_en [get_bd_pins input_top_2_0/dbg_wr_en] [get_bd_pins xlconcat_0/In2]
-  connect_bd_net -net input_top_2_0_debug_data [get_bd_pins input_top_2_0/debug_data] [get_bd_pins vga_0/dbgB]
+  connect_bd_net -net input_top_2_0_debug_data [get_bd_pins input_top_2_0/debug_data] [get_bd_pins xlslice_4/Din]
   connect_bd_net -net mc_top_0_dbg_mux [get_bd_pins input_top_2_0/dbg_mux] [get_bd_pins mc_top_0/dbg_mux]
   connect_bd_net -net mc_top_0_debug_go [get_bd_pins input_top_2_0/debug_go] [get_bd_pins mc_top_0/input_debug_go]
   connect_bd_net -net mc_top_0_debug_status [get_bd_pins mc_top_0/debug_status] [get_bd_pins regs_0/in_reg16]
@@ -1838,6 +1847,7 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
   connect_bd_net -net xlslice_1_Dout [get_bd_pins xlconcat_0/In5] [get_bd_pins xlslice_1/Dout]
   connect_bd_net -net xlslice_2_Dout [get_bd_pins xlconcat_0/In3] [get_bd_pins xlslice_2/Dout]
   connect_bd_net -net xlslice_3_Dout [get_bd_pins xlconcat_0/In4] [get_bd_pins xlslice_3/Dout]
+  connect_bd_net -net xlslice_4_Dout [get_bd_pins vga_0/dbgB] [get_bd_pins xlslice_4/Dout]
 
   # Create address segments
   assign_bd_address -offset 0x43F10000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs axi_mm2s_mapper_0/S_AXI/Reg] -force

@@ -27,4 +27,6 @@
 // take 16 bits, i.e. ignore highest nibble
 `define VALUE_WIDTH 16
 
+`define NUM_BINS 4
+
 `endif

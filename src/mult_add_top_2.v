@@ -113,7 +113,7 @@ module mult_add_top_2  (
             input wire m_axis_data7_tready,
             output wire m_axis_data7_tlast
         );
-localparam integer DELAY = 5;
+localparam integer DELAY = 3;
 
 wire [`CHANNELS-1:0] adder_tvalid;
 wire [`CHANNELS-1:0] average_tvalid;
