@@ -38,7 +38,7 @@ module vga
 reg [17:0] cnt = 0;
 
 /* assign step  = vga_in[17:16]; */
-assign debug = vga_in[19:18];
+assign debug = ~vga_in[19:18];
 
 assign up = dbgA;
 /* assign up = { */
