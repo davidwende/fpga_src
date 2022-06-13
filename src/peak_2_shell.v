@@ -24,13 +24,27 @@ module peak_2_shell
     output  [`INDEX_WIDTH- 1 : 0] index2_final
         );
 
+localparam integer FAR = 0;
+localparam integer NEAR = 1;
+
 wire reset;
 assign reset = !aresetn;
+
+/* how to handle incoming values */
 wire catch1;
-reg [`VALUE_WIDTH-1 : 0] peak1, peak2, old_peak2;
-reg [`INDEX_WIDTH-1 : 0] index1, index2, old_index2;
-reg side1, side2, old_side2;
-wire [`VALUE_WIDTH-1 : 0] input_mid, input_end, input_begin;
+wire catch2;
+wire save_input;
+wire save_p1;
+wire slip;
+wire restore;
+wire dist1;
+wire dist_saved;
+
+reg [`VALUE_WIDTH-1 : 0] peak1, peak2, peak_saved;
+reg [`INDEX_WIDTH-1 : 0] index1, index2, index_saved;
+wire [`INDEX_WIDTH-1 : 0] index_mid;
+reg side1, side2, side_saved;
+wire [`VALUE_WIDTH-1 : 0] input_mid, input_end;
 
 // Now do the process for each channel
 reg [`VALUE_WIDTH*2*`NUM_BINS - 1 : 0] sr_input;
@@ -49,9 +63,30 @@ always @(posedge clk)
         sr_input[0 +: `VALUE_WIDTH] <= input_i;
 
 assign input_mid = sr_input[3*`VALUE_WIDTH +: `VALUE_WIDTH];
+assign index_mid = (index_i - 5);
 
 /* indicate that we need to update peak1 and index1 */
-assign catch1 = ( (input_mid > peak1) && valid);
+/* catch1 : input is larger than peak1, so replaces peak1 */
+assign catch1 =  (input_mid > peak1) ;
+assign dist1 = ((index_mid - index1) < `PEAK_HOLDOFF) ? NEAR : FAR;
+assign dist_saved = ((index_mid - index_saved) < `PEAK_HOLDOFF) ? NEAR : FAR;
+
+/* catch2 : input is larger than peak2 but smaller than peak1
+* and distance from current peak is far, so input replaces peak2 */
+assign catch2 = (~catch1 && (input_mid > peak2) && (dist1 == FAR));
+
+/* slip : peak1 was replaced by input and distance large so peak1 replaces peak2 */
+assign slip = (catch1 && dist1 == FAR);
+
+/* save2 : peak1 was replaced by input but previous peak1 was near, therefore
+* it cannot become peak2. We save it incase it becomes "far" and can
+* therefore be used */
+assign save_p1 = (catch1 && (dist1 == NEAR));
+/* assign save_input = (~catch1 && (input_mid > peak_saved) && (dist1 == NEAR)); */
+assign save_input = (~catch1 && (input_mid > peak2) && (dist1 == NEAR));
+
+/* restore: A new peak1 registered that makes the saved 2 now "far" */
+assign restore = (catch1 && (peak_saved > peak2) && (dist_saved == FAR));
 
 /* now catch largest peak */
 always @(posedge clk)
@@ -59,47 +94,67 @@ always @(posedge clk)
     begin
         peak1      <= 0;
         index1     <= 0;
-        /* old_peak2  <= 0; */
-        /* old_side2  <= 0; */
-        /* old_index2 <= 0; */
     end
-    else if (catch1)
+    else if (catch1 && valid)
     begin
         peak1      <= input_mid;
-        index1     <= index_i - 4;
-        /* old_peak2  <= peak2; */
-        /* old_side2  <= side2; */
-        /* old_index2 <= index2; */
+        index1     <= index_mid;
     end
 
-/* now capture peak2 */
-    assign slip2 = (catch1 && (index_i - index2) > `PEAK_HOLDOFF);
-    assign rollback2 = (catch1 && (index_i - 4 - index2) <= `PEAK_HOLDOFF);
 
+/* save potential peaks to temp storage */
+always @(posedge clk)
+    if (reset)
+    begin
+        peak_saved  <= 0;
+        index_saved <= 0;
+    end
+    else if (save_p1 && valid)
+    begin
+        peak_saved <= peak1;
+        index_saved <= index1;
+        side_saved <= side1;
+    end
+    else if (save_input && valid)
+    begin
+        peak_saved <= input_mid;
+        index_saved <= index_mid;
+        if (input_end > input_i)
+            side_saved <= 1'b0;
+        else
+            side_saved <= 1'b1;
+    end
+
+/* Store values into peak2 from either:
+* 1. temp storage or
+* 2. slip from p1 or
+* 3. capture from input */
 always @(posedge clk)
     if (reset)
     begin
         peak2  <= 0;
         index2 <= 0;
-        side2  <= 0;
-        old_peak2  <= 0;
-        old_side2  <= 0;
-        old_index2 <= 0;
     end
-    else if (rollback2)
+    else if (slip && valid)
     begin
-        peak2 <= old_peak2;
-        index2 <= old_index2;
-        side2 <= old_side2;
-    end
-    else if (slip2)
-    begin
-        peak2  <= peak1;
-        side2  <= side1;
+        peak2 <= peak1;
         index2 <= index1;
-        old_peak2  <= peak2;
-        old_side2  <= side2;
-        old_index2 <= index2;
+        side2  <= side1;
+    end
+    else if (catch2 && valid)
+    begin
+        peak2 <= input_mid;
+        index2 <= index_mid;
+        if (input_end > input_i)
+            side2 <= 1'b0;
+        else
+            side2 <= 1'b1;
+    end
+    else if (restore && valid)
+    begin
+        peak2 <= peak_saved;
+        index2 <= index_saved;
+        side2  <= side_saved;
     end
 
 
@@ -112,7 +167,6 @@ assign index2_final = index2;
 /* for peak1 */
 
 assign input_end = sr_input[`VALUE_WIDTH*(2*`NUM_BINS -1) +: `VALUE_WIDTH];
-/* assign input_begin = sr_input[0 +: `VALUE_WIDTH]; */
 always @(posedge clk)
     if (catch1)
     begin

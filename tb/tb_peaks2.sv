@@ -31,6 +31,8 @@ reg aresetn;
 
 reg clk = 0;
 reg [`VALUE_WIDTH-1:0] input_i;
+wire [`VALUE_WIDTH-1:0] peak1_final;
+wire [`VALUE_WIDTH-1:0] peak2_final;
 
 //wire [`INDEX_WIDTH-1:0] index_i;
 
