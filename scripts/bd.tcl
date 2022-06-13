@@ -413,13 +413,13 @@ proc create_root_design { parentCell } {
   set clk_wiz_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:clk_wiz clk_wiz_0 ]
   set_property -dict [ list \
    CONFIG.CLKOUT1_DRIVES {BUFG} \
-   CONFIG.CLKOUT1_JITTER {265.122} \
+   CONFIG.CLKOUT1_JITTER {199.513} \
    CONFIG.CLKOUT1_PHASE_ERROR {154.678} \
-   CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {10} \
+   CONFIG.CLKOUT1_REQUESTED_OUT_FREQ {25} \
    CONFIG.CLKOUT2_DRIVES {BUFG} \
-   CONFIG.CLKOUT2_JITTER {265.122} \
+   CONFIG.CLKOUT2_JITTER {199.513} \
    CONFIG.CLKOUT2_PHASE_ERROR {154.678} \
-   CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {10} \
+   CONFIG.CLKOUT2_REQUESTED_OUT_FREQ {25} \
    CONFIG.CLKOUT2_USED {true} \
    CONFIG.CLKOUT3_DRIVES {BUFG} \
    CONFIG.CLKOUT3_JITTER {134.634} \
@@ -446,8 +446,8 @@ proc create_root_design { parentCell } {
    CONFIG.MMCM_BANDWIDTH {OPTIMIZED} \
    CONFIG.MMCM_CLKFBOUT_MULT_F {24} \
    CONFIG.MMCM_CLKIN2_PERIOD {10.0} \
-   CONFIG.MMCM_CLKOUT0_DIVIDE_F {120} \
-   CONFIG.MMCM_CLKOUT1_DIVIDE {120} \
+   CONFIG.MMCM_CLKOUT0_DIVIDE_F {48} \
+   CONFIG.MMCM_CLKOUT1_DIVIDE {48} \
    CONFIG.MMCM_CLKOUT2_DIVIDE {10} \
    CONFIG.MMCM_CLKOUT3_DIVIDE {1} \
    CONFIG.MMCM_CLKOUT4_DIVIDE {1} \
@@ -1765,6 +1765,7 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
   connect_bd_net -net mc_top_0_select_average [get_bd_pins mc_top_0/select_average] [get_bd_pins mult_add_top_2_0/select_average]
   connect_bd_net -net mc_top_0_status [get_bd_pins mc_top_0/status] [get_bd_pins regs_0/in_reg0]
   connect_bd_net -net mc_top_0_sync_awg [get_bd_pins mc_top_0/sync_awg] [get_bd_pins pm_top_0/sync_awg] [get_bd_pins pm_top_1/sync_awg] [get_bd_pins pm_top_2/sync_awg]
+  connect_bd_net -net mc_top_0_timestamp [get_bd_pins mc_top_0/timestamp] [get_bd_pins regs_0/in_reg15]
   connect_bd_net -net mult_add_top_2_0_xk_out [get_bd_pins mult_add_top_2_0/xk_out] [get_bd_pins peak_top_2_0/xk]
   connect_bd_net -net peak_top_2_0_peaks_ready [get_bd_pins mc_top_0/peaks_ready] [get_bd_pins peak_top_2_0/peaks_ready]
   connect_bd_net -net pm0_miso_0_1 [get_bd_ports pm0_miso] [get_bd_pins spi_adc_pm_0/pm0_miso]
@@ -1802,7 +1803,6 @@ gpio[0]#qspi0_ss_b#qspi0_io[0]#qspi0_io[1]#qspi0_io[2]#qspi0_io[3]/HOLD_B#qspi0_
   connect_bd_net -net regs_0_out_reg12 [get_bd_pins regs_0/out_reg12] [get_bd_pins spi_adc_pm_0/control_pm2]
   connect_bd_net -net regs_0_out_reg13 [get_bd_pins regs_0/out_reg13] [get_bd_pins spi_adc_pm_0/data_pm2]
   connect_bd_net -net regs_0_out_reg14 [get_bd_pins regs_0/out_reg14] [get_bd_pins vga_0/vga_in]
-  connect_bd_net -net regs_0_out_reg15 [get_bd_pins regs_0/in_reg15] [get_bd_pins regs_0/out_reg15]
   connect_bd_net -net regs_0_out_reg16 [get_bd_pins mc_top_0/debug] [get_bd_pins regs_0/out_reg16]
   connect_bd_net -net rst_ps7_0_100M_peripheral_aresetn [get_bd_pins all_rstn_sync_0/asyncrst_n] [get_bd_pins axi_mm2s_mapper_0/aresetn] [get_bd_pins fft_top_2_0/s_axi_fft_aresetn] [get_bd_pins galvo_top_0/s_axi_h_aresetn] [get_bd_pins galvo_top_0/s_axi_v_aresetn] [get_bd_pins input_top_2_0/s_axi_adc0_aresetn] [get_bd_pins memaxi_reset/peripheral_aresetn] [get_bd_pins pm_top_0/s_axi_pma_aresetn] [get_bd_pins pm_top_0/s_axi_pmb_aresetn] [get_bd_pins pm_top_1/s_axi_pma_aresetn] [get_bd_pins pm_top_1/s_axi_pmb_aresetn] [get_bd_pins pm_top_2/s_axi_pma_aresetn] [get_bd_pins pm_top_2/s_axi_pmb_aresetn] [get_bd_pins regs_0/S_AXI_ARESETN] [get_bd_pins window_top_2_0/s_axi_coef_aresetn] [get_bd_pins xmux/ARESETN] [get_bd_pins xmux/M00_ARESETN] [get_bd_pins xmux/M01_ARESETN] [get_bd_pins xmux/M02_ARESETN] [get_bd_pins xmux/M03_ARESETN] [get_bd_pins xmux/M04_ARESETN] [get_bd_pins xmux/M05_ARESETN] [get_bd_pins xmux/M06_ARESETN] [get_bd_pins xmux/M07_ARESETN] [get_bd_pins xmux/M08_ARESETN] [get_bd_pins xmux/M09_ARESETN] [get_bd_pins xmux/M10_ARESETN] [get_bd_pins xmux/M11_ARESETN] [get_bd_pins xmux/M12_ARESETN] [get_bd_pins xmux/M13_ARESETN] [get_bd_pins xmux/M14_ARESETN] [get_bd_pins xmux/S00_ARESETN]
   connect_bd_net -net rst_ps7_0_100M_peripheral_reset [get_bd_pins clk_wiz_0/reset] [get_bd_pins clk_wiz_1/reset] [get_bd_pins memaxi_reset/peripheral_reset] [get_bd_pins spi_adc_pm_0/reset]

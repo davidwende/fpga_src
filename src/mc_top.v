@@ -62,13 +62,22 @@ module mc_top
     output dbg_running_s,
     output [7:0] dbg_count,
 
+    output [31:0] timestamp,
+
     output reg last,
     output sync_awg,
     output reg galvo_go
     );
 
+reg [32-1:0] cnt_ts = {32{1'b0}};
+
 assign dbg_running = running;
 assign dbg_running_s = running_s;
+
+always @(posedge clk_control)
+    cnt_ts <= cnt_ts + 1'b1;
+
+assign timestamp = cnt_ts;
 
 // reset adc and pm
 wire adc_rst, pm_rst;
