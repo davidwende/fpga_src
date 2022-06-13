@@ -28,5 +28,6 @@
 `define VALUE_WIDTH 16
 
 `define NUM_BINS 4
+`define PEAK_HOLDOFF 20
 
 `endif

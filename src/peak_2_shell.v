@@ -27,9 +27,9 @@ module peak_2_shell
 wire reset;
 assign reset = !aresetn;
 wire catch1;
-reg [`VALUE_WIDTH-1 : 0] peak1, peak2;
-reg [`INDEX_WIDTH-1 : 0] index1, index2;
-reg side1, side2;
+reg [`VALUE_WIDTH-1 : 0] peak1, peak2, old_peak2;
+reg [`INDEX_WIDTH-1 : 0] index1, index2, old_index2;
+reg side1, side2, old_side2;
 wire [`VALUE_WIDTH-1 : 0] input_mid, input_end, input_begin;
 
 // Now do the process for each channel
@@ -56,27 +56,50 @@ assign catch1 = ( (input_mid > peak1) && valid);
 /* now catch largest peak */
 always @(posedge clk)
     if (reset)
-        peak1 <= 0;
+    begin
+        peak1      <= 0;
+        index1     <= 0;
+        /* old_peak2  <= 0; */
+        /* old_side2  <= 0; */
+        /* old_index2 <= 0; */
+    end
     else if (catch1)
     begin
-        peak1 <= input_mid;
-        index1 <= index_i - 4;
+        peak1      <= input_mid;
+        index1     <= index_i - 4;
+        /* old_peak2  <= peak2; */
+        /* old_side2  <= side2; */
+        /* old_index2 <= index2; */
     end
 
 /* now capture peak2 */
-    assign catch2 = (catch1 && (index_i - index2) > `PEAK_HOLDOFF);
+    assign slip2 = (catch1 && (index_i - index2) > `PEAK_HOLDOFF);
+    assign rollback2 = (catch1 && (index_i - 4 - index2) <= `PEAK_HOLDOFF);
 
 always @(posedge clk)
     if (reset)
     begin
-        peak2 <= 0;
+        peak2  <= 0;
         index2 <= 0;
+        side2  <= 0;
+        old_peak2  <= 0;
+        old_side2  <= 0;
+        old_index2 <= 0;
     end
-    else if (catch2)
+    else if (rollback2)
     begin
-        peak2 <= peak1;
-        side2 <= side1;
+        peak2 <= old_peak2;
+        index2 <= old_index2;
+        side2 <= old_side2;
+    end
+    else if (slip2)
+    begin
+        peak2  <= peak1;
+        side2  <= side1;
         index2 <= index1;
+        old_peak2  <= peak2;
+        old_side2  <= side2;
+        old_index2 <= index2;
     end
 
 
